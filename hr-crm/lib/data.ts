@@ -74,6 +74,7 @@ export interface Employee {
   st: "active" | "on_leave" | "inactive"; av: string; hire: string;
   sal: string; mgr: string; eid: string; tp: string; contract: string;
   compEmail: string; compPhone: string; compExt: string;
+  dob: string; // ISO date
   history: HistoryEntry[];
 }
 
@@ -286,7 +287,7 @@ export const initialSettings: Settings = {
 };
 
 export const initialEmployees: Employee[] = [
-  {id:1,nm:"Sarah Chen",role:"Engineering Manager",dept:"Engineering",sub:"Frontend",rank:"Lead",branch:"San Francisco HQ",email:"sarah.chen@gmail.com",ph:"+1 (555) 234-5678",loc:"San Francisco, CA",st:"active",av:"SC",hire:"2021-03-15",sal:"$185,000",mgr:"David Park",eid:"EMP-001",tp:"Full-time",contract:"Full-time",compEmail:"sarah.chen@company.com",compPhone:"+1 (800) 555-0100",compExt:"1001",history:[
+  {id:1,nm:"Sarah Chen",role:"Engineering Manager",dept:"Engineering",sub:"Frontend",rank:"Lead",branch:"San Francisco HQ",email:"sarah.chen@gmail.com",ph:"+1 (555) 234-5678",loc:"San Francisco, CA",st:"active",av:"SC",hire:"2021-03-15",sal:"$185,000",mgr:"David Park",eid:"EMP-001",tp:"Full-time",contract:"Full-time",compEmail:"sarah.chen@company.com",compPhone:"+1 (800) 555-0100",compExt:"1001",dob:"1992-02-24",history:[
     {id:"h1a",date:"2021-03-15",type:"hire",from:"",to:"Software Engineer",note:"Joined as Software Engineer"},
     {id:"h1b",date:"2022-01-10",type:"rank",from:"Junior",to:"Mid-Level",note:"Promoted after strong Q4 performance"},
     {id:"h1c",date:"2022-09-01",type:"position",from:"Software Engineer",to:"Senior Software Engineer",note:"Promoted to Senior"},
@@ -295,14 +296,14 @@ export const initialEmployees: Employee[] = [
     {id:"h1f",date:"2024-01-15",type:"rank",from:"Senior",to:"Lead",note:"Lead rank with management role"},
     {id:"h1g",date:"2024-06-01",type:"manager",from:"Lisa Johnson",to:"David Park",note:"Reporting line changed in reorg"},
   ]},
-  {id:2,nm:"Marcus Williams",role:"Senior Designer",dept:"Design",sub:"UI/UX",rank:"Senior",branch:"New York Office",email:"marcus.w@gmail.com",ph:"+1 (555) 345-6789",loc:"New York, NY",st:"active",av:"MW",hire:"2022-01-10",sal:"$145,000",mgr:"Lisa Johnson",eid:"EMP-002",tp:"Full-time",contract:"Full-time",compEmail:"marcus.w@company.com",compPhone:"+1 (800) 555-0100",compExt:"1002",history:[
+  {id:2,nm:"Marcus Williams",role:"Senior Designer",dept:"Design",sub:"UI/UX",rank:"Senior",branch:"New York Office",email:"marcus.w@gmail.com",ph:"+1 (555) 345-6789",loc:"New York, NY",st:"active",av:"MW",hire:"2022-01-10",sal:"$145,000",mgr:"Lisa Johnson",eid:"EMP-002",tp:"Full-time",contract:"Full-time",compEmail:"marcus.w@company.com",compPhone:"+1 (800) 555-0100",compExt:"1002",dob:"1990-07-14",history:[
     {id:"h2a",date:"2022-01-10",type:"hire",from:"",to:"Designer",note:"Joined as Designer"},
     {id:"h2b",date:"2022-08-15",type:"rank",from:"Junior",to:"Mid-Level",note:"Promoted after 6-month review"},
     {id:"h2c",date:"2023-06-01",type:"position",from:"Designer",to:"Senior Designer",note:"Promoted to Senior Designer"},
     {id:"h2d",date:"2023-06-01",type:"rank",from:"Mid-Level",to:"Senior",note:"Senior rank"},
     {id:"h2e",date:"2024-03-01",type:"branch",from:"San Francisco HQ",to:"New York Office",note:"Relocated to NY office"},
   ]},
-  {id:3,nm:"Priya Patel",role:"Product Manager",dept:"Product",sub:"Product Management",rank:"Senior",branch:"Remote",email:"priya.p@gmail.com",ph:"+1 (555) 456-7890",loc:"Austin, TX",st:"active",av:"PP",hire:"2020-08-22",sal:"$165,000",mgr:"David Park",eid:"EMP-003",tp:"Full-time",contract:"Full-time",compEmail:"priya.p@company.com",compPhone:"+1 (800) 555-0100",compExt:"1003",history:[
+  {id:3,nm:"Priya Patel",role:"Product Manager",dept:"Product",sub:"Product Management",rank:"Senior",branch:"Remote",email:"priya.p@gmail.com",ph:"+1 (555) 456-7890",loc:"Austin, TX",st:"active",av:"PP",hire:"2020-08-22",sal:"$165,000",mgr:"David Park",eid:"EMP-003",tp:"Full-time",contract:"Full-time",compEmail:"priya.p@company.com",compPhone:"+1 (800) 555-0100",compExt:"1003",dob:"1988-11-03",history:[
     {id:"h3a",date:"2020-08-22",type:"hire",from:"",to:"Associate PM",note:"Joined as Associate PM"},
     {id:"h3b",date:"2021-03-01",type:"rank",from:"Junior",to:"Mid-Level",note:"Promoted"},
     {id:"h3c",date:"2022-02-01",type:"position",from:"Associate PM",to:"Product Manager",note:"Promoted to PM"},
@@ -310,37 +311,37 @@ export const initialEmployees: Employee[] = [
     {id:"h3e",date:"2023-06-01",type:"branch",from:"San Francisco HQ",to:"Remote",note:"Moved to remote"},
     {id:"h3f",date:"2024-02-01",type:"department",from:"Engineering",to:"Product",note:"Transferred to Product dept"},
   ]},
-  {id:4,nm:"James O'Brien",role:"DevOps Engineer",dept:"Engineering",sub:"DevOps",rank:"Mid-Level",branch:"Remote",email:"james.ob@gmail.com",ph:"+1 (555) 567-8901",loc:"Remote",st:"on_leave",av:"JO",hire:"2023-02-14",sal:"$155,000",mgr:"Sarah Chen",eid:"EMP-004",tp:"Full-time",contract:"Full-time",compEmail:"james.ob@company.com",compPhone:"+1 (800) 555-0100",compExt:"1004",history:[
+  {id:4,nm:"James O'Brien",role:"DevOps Engineer",dept:"Engineering",sub:"DevOps",rank:"Mid-Level",branch:"Remote",email:"james.ob@gmail.com",ph:"+1 (555) 567-8901",loc:"Remote",st:"on_leave",av:"JO",hire:"2023-02-14",sal:"$155,000",mgr:"Sarah Chen",eid:"EMP-004",tp:"Full-time",contract:"Full-time",compEmail:"james.ob@company.com",compPhone:"+1 (800) 555-0100",compExt:"1004",dob:"1995-03-22",history:[
     {id:"h4a",date:"2023-02-14",type:"hire",from:"",to:"DevOps Engineer",note:"Joined as DevOps Engineer"},
     {id:"h4b",date:"2023-08-01",type:"rank",from:"Junior",to:"Mid-Level",note:"Passed probation, promoted"},
     {id:"h4c",date:"2025-02-20",type:"status",from:"Active",to:"On Leave",note:"Annual leave"},
   ]},
-  {id:5,nm:"Aisha Mohammed",role:"HR Specialist",dept:"Human Resources",sub:"People Ops",rank:"Mid-Level",branch:"San Francisco HQ",email:"aisha.m@gmail.com",ph:"+1 (555) 678-9012",loc:"Chicago, IL",st:"active",av:"AM",hire:"2022-06-01",sal:"$95,000",mgr:"Rachel Kim",eid:"EMP-005",tp:"Full-time",contract:"Full-time",compEmail:"aisha.m@company.com",compPhone:"+1 (800) 555-0100",compExt:"1005",history:[
+  {id:5,nm:"Aisha Mohammed",role:"HR Specialist",dept:"Human Resources",sub:"People Ops",rank:"Mid-Level",branch:"San Francisco HQ",email:"aisha.m@gmail.com",ph:"+1 (555) 678-9012",loc:"Chicago, IL",st:"active",av:"AM",hire:"2022-06-01",sal:"$95,000",mgr:"Rachel Kim",eid:"EMP-005",tp:"Full-time",contract:"Full-time",compEmail:"aisha.m@company.com",compPhone:"+1 (800) 555-0100",compExt:"1005",dob:"1994-09-18",history:[
     {id:"h5a",date:"2022-06-01",type:"hire",from:"",to:"HR Assistant",note:"Joined as HR Assistant"},
     {id:"h5b",date:"2023-01-01",type:"position",from:"HR Assistant",to:"HR Specialist",note:"Promoted to Specialist"},
     {id:"h5c",date:"2023-01-01",type:"rank",from:"Junior",to:"Mid-Level",note:"Rank promotion"},
   ]},
-  {id:6,nm:"Tom Fischer",role:"Data Analyst",dept:"Product",sub:"Product Analytics",rank:"Junior",branch:"Remote",email:"tom.f@gmail.com",ph:"+1 (555) 789-0123",loc:"Denver, CO",st:"active",av:"TF",hire:"2023-09-18",sal:"$120,000",mgr:"Priya Patel",eid:"EMP-006",tp:"Full-time",contract:"Full-time",compEmail:"tom.f@company.com",compPhone:"+1 (800) 555-0100",compExt:"1006",history:[
+  {id:6,nm:"Tom Fischer",role:"Data Analyst",dept:"Product",sub:"Product Analytics",rank:"Junior",branch:"Remote",email:"tom.f@gmail.com",ph:"+1 (555) 789-0123",loc:"Denver, CO",st:"active",av:"TF",hire:"2023-09-18",sal:"$120,000",mgr:"Priya Patel",eid:"EMP-006",tp:"Full-time",contract:"Full-time",compEmail:"tom.f@company.com",compPhone:"+1 (800) 555-0100",compExt:"1006",dob:"1997-02-22",history:[
     {id:"h6a",date:"2023-09-18",type:"hire",from:"",to:"Data Analyst",note:"Joined as Data Analyst"},
   ]},
-  {id:7,nm:"Elena Rodriguez",role:"Marketing Lead",dept:"Marketing",sub:"Growth",rank:"Lead",branch:"Remote",email:"elena.r@gmail.com",ph:"+1 (555) 890-1234",loc:"Miami, FL",st:"active",av:"ER",hire:"2021-11-05",sal:"$135,000",mgr:"David Park",eid:"EMP-007",tp:"Full-time",contract:"Full-time",compEmail:"elena.r@company.com",compPhone:"+1 (800) 555-0100",compExt:"1007",history:[
+  {id:7,nm:"Elena Rodriguez",role:"Marketing Lead",dept:"Marketing",sub:"Growth",rank:"Lead",branch:"Remote",email:"elena.r@gmail.com",ph:"+1 (555) 890-1234",loc:"Miami, FL",st:"active",av:"ER",hire:"2021-11-05",sal:"$135,000",mgr:"David Park",eid:"EMP-007",tp:"Full-time",contract:"Full-time",compEmail:"elena.r@company.com",compPhone:"+1 (800) 555-0100",compExt:"1007",dob:"1991-05-29",history:[
     {id:"h7a",date:"2021-11-05",type:"hire",from:"",to:"Marketing Specialist",note:"Joined as Marketing Specialist"},
     {id:"h7b",date:"2022-06-01",type:"rank",from:"Junior",to:"Mid-Level",note:"Promoted"},
     {id:"h7c",date:"2023-03-01",type:"position",from:"Marketing Specialist",to:"Marketing Lead",note:"Promoted to Lead"},
     {id:"h7d",date:"2023-03-01",type:"rank",from:"Mid-Level",to:"Lead",note:"Lead rank"},
     {id:"h7e",date:"2024-01-01",type:"department",from:"Sales",to:"Marketing",note:"Moved to Marketing dept"},
   ]},
-  {id:8,nm:"Kai Nakamura",role:"Software Engineer",dept:"Engineering",sub:"Frontend",rank:"Mid-Level",branch:"Remote",email:"kai.n@gmail.com",ph:"+1 (555) 901-2345",loc:"Seattle, WA",st:"active",av:"KN",hire:"2023-04-20",sal:"$140,000",mgr:"Sarah Chen",eid:"EMP-008",tp:"Contract",contract:"Contract",compEmail:"kai.n@company.com",compPhone:"+1 (800) 555-0100",compExt:"1008",history:[
+  {id:8,nm:"Kai Nakamura",role:"Software Engineer",dept:"Engineering",sub:"Frontend",rank:"Mid-Level",branch:"Remote",email:"kai.n@gmail.com",ph:"+1 (555) 901-2345",loc:"Seattle, WA",st:"active",av:"KN",hire:"2023-04-20",sal:"$140,000",mgr:"Sarah Chen",eid:"EMP-008",tp:"Contract",contract:"Contract",compEmail:"kai.n@company.com",compPhone:"+1 (800) 555-0100",compExt:"1008",dob:"1996-12-08",history:[
     {id:"h8a",date:"2023-04-20",type:"hire",from:"",to:"Software Engineer",note:"Joined as contractor"},
     {id:"h8b",date:"2023-10-01",type:"rank",from:"Junior",to:"Mid-Level",note:"Promoted after strong performance"},
     {id:"h8c",date:"2024-04-20",type:"contract",from:"Contract (6mo)",to:"Contract (renewed)",note:"Contract renewed for another year"},
   ]},
-  {id:9,nm:"Diana Costa",role:"Recruiter",dept:"Human Resources",sub:"Recruitment",rank:"Mid-Level",branch:"New York Office",email:"diana.c@gmail.com",ph:"+1 (555) 012-3456",loc:"Boston, MA",st:"active",av:"DC",hire:"2022-10-12",sal:"$88,000",mgr:"Rachel Kim",eid:"EMP-009",tp:"Full-time",contract:"Full-time",compEmail:"diana.c@company.com",compPhone:"+1 (800) 555-0100",compExt:"1009",history:[
+  {id:9,nm:"Diana Costa",role:"Recruiter",dept:"Human Resources",sub:"Recruitment",rank:"Mid-Level",branch:"New York Office",email:"diana.c@gmail.com",ph:"+1 (555) 012-3456",loc:"Boston, MA",st:"active",av:"DC",hire:"2022-10-12",sal:"$88,000",mgr:"Rachel Kim",eid:"EMP-009",tp:"Full-time",contract:"Full-time",compEmail:"diana.c@company.com",compPhone:"+1 (800) 555-0100",compExt:"1009",dob:"1993-08-05",history:[
     {id:"h9a",date:"2022-10-12",type:"hire",from:"",to:"Recruiting Coordinator",note:"Joined as Coordinator"},
     {id:"h9b",date:"2023-04-01",type:"position",from:"Recruiting Coordinator",to:"Recruiter",note:"Promoted to Recruiter"},
     {id:"h9c",date:"2023-04-01",type:"rank",from:"Junior",to:"Mid-Level",note:"Rank promotion"},
   ]},
-  {id:10,nm:"Alex Thompson",role:"Sales Manager",dept:"Sales",sub:"Enterprise",rank:"Lead",branch:"London Office",email:"alex.t@gmail.com",ph:"+1 (555) 123-4567",loc:"Los Angeles, CA",st:"active",av:"AT",hire:"2020-05-30",sal:"$150,000",mgr:"David Park",eid:"EMP-010",tp:"Full-time",contract:"Full-time",compEmail:"alex.t@company.com",compPhone:"+44 (800) 555-0200",compExt:"2001",history:[
+  {id:10,nm:"Alex Thompson",role:"Sales Manager",dept:"Sales",sub:"Enterprise",rank:"Lead",branch:"London Office",email:"alex.t@gmail.com",ph:"+1 (555) 123-4567",loc:"Los Angeles, CA",st:"active",av:"AT",hire:"2020-05-30",sal:"$150,000",mgr:"David Park",eid:"EMP-010",tp:"Full-time",contract:"Full-time",compEmail:"alex.t@company.com",compPhone:"+44 (800) 555-0200",compExt:"2001",dob:"1989-04-15",history:[
     {id:"h10a",date:"2020-05-30",type:"hire",from:"",to:"Sales Rep",note:"Joined as Sales Rep"},
     {id:"h10b",date:"2021-01-15",type:"rank",from:"Junior",to:"Mid-Level",note:"Promoted"},
     {id:"h10c",date:"2021-09-01",type:"position",from:"Sales Rep",to:"Senior Sales Rep",note:"Promoted to Senior"},
