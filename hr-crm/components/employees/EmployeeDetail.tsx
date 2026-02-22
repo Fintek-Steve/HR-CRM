@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowLeft, Edit, Phone, Mail, MessageSquare, Building2, Landmark, Check, Plus, KeyRound, Clock, Briefcase, Award, GitBranch, MapPin, FileText, User, Calendar, X, Layers } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, MessageSquare, Building2, Landmark, Check, Plus, KeyRound, Clock, Briefcase, Award, GitBranch, MapPin, FileText, User, Calendar, X, Layers, Eye, Image, Download } from "lucide-react";
 import { Avatar, StatusBadge, ScopeBadge, Btn, Input, MiniInput, Modal, FormField, Select, Toast } from "@/components/ui/shared";
 import { typeColors, Settings, Employee, HistoryEntry, initialEmployees, generateId } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
@@ -25,6 +25,7 @@ export default function EmployeeDetail({ emp: initEmp, onBack, settings }: { emp
   const [editNote, setEditNote] = useState("");
   const [showAddHistory, setShowAddHistory] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<any>(null);
 
   const idx = initialEmployees.findIndex(e => e.id === emp.id);
   const tabs = ["Overview", "History", "Compensation", "KPIs", "Accounts", "Documents", "Notes"];
@@ -270,17 +271,51 @@ export default function EmployeeDetail({ emp: initEmp, onBack, settings }: { emp
         if (empDocs.length === 0) return <div style={{ padding: 24, textAlign: "center" as const, color: t.textTertiary }}>No documents assigned</div>;
         return empDocs.map((d, i) => {
           const fi = fileIcons[d.fileType] || fileIcons.other;
-          return <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < empDocs.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
+          return <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < empDocs.length - 1 ? `1px solid ${t.borderLight}` : "none", cursor: "pointer", borderRadius: 8 }} onClick={() => setPreviewDoc(d)} onMouseEnter={e => e.currentTarget.style.background = t.surfaceHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: fi.color + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10, fontWeight: 700, color: fi.color }}>{fi.label}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{d.name}</div>
               <div style={{ fontSize: 11, color: t.textTertiary }}>{d.uploadDate} · {d.fileSize}</div>
             </div>
             <span style={{ fontSize: 11, fontWeight: 600, color: catColor(d.category), background: catColor(d.category) + "15", padding: "2px 8px", borderRadius: 6 }}>{d.category}</span>
+            <button onClick={e => { e.stopPropagation(); setPreviewDoc(d); }} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = t.accentLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Eye size={14} color={t.accent} /></button>
           </div>;
         });
       })()}
     </div>}
+
+    {previewDoc && <Modal title="" onClose={() => setPreviewDoc(null)} wide>
+      {(() => {
+        const d = previewDoc;
+        const fileIcons: Record<string, { color: string }> = { pdf: { color: "#E53E3E" }, doc: { color: "#2D5BFF" }, img: { color: "#D97706" }, other: { color: "#6B6966" } };
+        const fi = fileIcons[d.fileType] || fileIcons.other;
+        const catColor = (settings.docCategories || []).find((c: any) => c.name === d.category)?.color || "#6B6966";
+        return <>
+          <div style={{ textAlign: "center" as const, padding: "20px 0" }}>
+            <div style={{ width: 64, height: 64, borderRadius: 16, background: fi.color + "15", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}><FileText size={32} color={fi.color} /></div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: "0 0 8px" }}>{d.name}</h2>
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" as const }}>
+              <span style={{ fontSize: 12, color: catColor, background: catColor + "15", padding: "3px 10px", borderRadius: 6, fontWeight: 600 }}>{d.category}</span>
+              <span style={{ fontSize: 12, color: t.textSecondary }}>{d.fileType.toUpperCase()} · {d.fileSize}</span>
+              <span style={{ fontSize: 12, color: t.textTertiary }}>Uploaded {d.uploadDate} by {d.uploadedBy}</span>
+            </div>
+          </div>
+          <div style={{ background: t.bg, borderRadius: 12, border: `1px solid ${t.borderLight}`, padding: 24, minHeight: 200 }}>
+            {d.fileType === "img" ? (
+              <div style={{ display: "flex", flexDirection: "column" as const, alignItems: "center", gap: 12 }}>
+                <div style={{ width: 200, height: 260, borderRadius: 12, background: `linear-gradient(135deg, ${fi.color}20, ${fi.color}10)`, display: "flex", alignItems: "center", justifyContent: "center", border: `2px dashed ${fi.color}40` }}><Image size={48} color={fi.color} strokeWidth={1} /></div>
+                <span style={{ fontSize: 13, color: t.textTertiary, fontStyle: "italic" as const }}>{d.content}</span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 14, lineHeight: 1.8, color: t.text, whiteSpace: "pre-wrap" as const }}>{d.content}</div>
+            )}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
+            <Btn variant="secondary" icon={Download}>Download</Btn>
+          </div>
+        </>;
+      })()}
+    </Modal>}
 
     {tab === "notes" && <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.border}`, padding: 48, textAlign: "center" as const }}><div style={{ fontSize: 40, marginBottom: 16 }}>🚧</div><div style={{ fontSize: 16, fontWeight: 600, color: t.text, marginBottom: 4 }}>Notes</div><div style={{ fontSize: 14, color: t.textSecondary }}>Coming in the next phase.</div></div>}
 
