@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Briefcase, Calendar, DollarSign, FileText } from "lucide-react";
+import { Briefcase, Calendar, DollarSign, FileText, CreditCard, Target } from "lucide-react";
 import { ThemeProvider, useTheme } from "@/lib/ThemeContext";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
@@ -9,12 +9,29 @@ import EmployeesPage from "@/components/employees/EmployeesPage";
 import EmployeeDetail from "@/components/employees/EmployeeDetail";
 import SettingsPage from "@/components/settings/SettingsPage";
 import DocumentsPage from "@/components/documents/DocumentsPage";
+import CompensationPage from "@/components/comp/CompensationPage";
+import KpiPage from "@/components/comp/KpiPage";
 import PlaceholderPage from "@/components/PlaceholderPage";
 import { initialSettings, initialEmployees, Settings, Employee } from "@/lib/data";
 
 function loadState<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
-  try { const s = localStorage.getItem(key); if (s) return JSON.parse(s); } catch {}
+  try {
+    const s = localStorage.getItem(key);
+    if (s) {
+      const parsed = JSON.parse(s);
+      // Merge missing keys from fallback (handles new fields added in updates)
+      if (typeof parsed === "object" && typeof fallback === "object" && !Array.isArray(parsed)) {
+        const merged = { ...fallback, ...parsed };
+        // Ensure new array fields exist even if saved version didn't have them
+        for (const k of Object.keys(fallback as any)) {
+          if ((merged as any)[k] === undefined) (merged as any)[k] = (fallback as any)[k];
+        }
+        return merged as T;
+      }
+      return parsed;
+    }
+  } catch {}
   return fallback;
 }
 
@@ -24,6 +41,8 @@ const pageConfig: Record<string, { title: string; subtitle: string }> = {
   recruitment: { title: "Recruitment", subtitle: "Manage job postings and pipeline" },
   leave: { title: "Leave Management", subtitle: "Track and approve leave requests" },
   payroll: { title: "Payroll & Compensation", subtitle: "Manage salaries and payroll" },
+  compensation: { title: "Compensation", subtitle: "Configure compensation items and tiers" },
+  kpis: { title: "KPI Structure", subtitle: "Define KPIs and performance tiers" },
   documents: { title: "Documents", subtitle: "Manage and assign company documents" },
   settings: { title: "Settings", subtitle: "Configure your organization" },
 };
@@ -51,6 +70,8 @@ function AppInner() {
             : page === "employees" ? <EmployeesPage onSelect={setSelEmp} settings={settings} employees={employees} />
             : page === "settings" ? <SettingsPage settings={settings} setSettings={setSettings} />
             : page === "documents" ? <DocumentsPage settings={settings} setSettings={setSettings} />
+            : page === "compensation" ? <CompensationPage settings={settings} setSettings={setSettings} />
+            : page === "kpis" ? <KpiPage settings={settings} setSettings={setSettings} />
             : page === "recruitment" ? <PlaceholderPage title="Recruitment & ATS" icon={Briefcase} />
             : page === "leave" ? <PlaceholderPage title="Leave Management" icon={Calendar} />
             : page === "payroll" ? <PlaceholderPage title="Payroll & Compensation" icon={DollarSign} />
