@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Building2, Briefcase, Award, Landmark, CreditCard, Target, KeyRound, Plus, Trash2, ChevronDown, ChevronUp, GitBranch, FolderTree, Check, X, Globe, Clock, FileText, Layers } from "lucide-react";
 import { Btn, Input, Select, Toggle, FormField, Modal, Toast, ScopeBadge } from "@/components/ui/shared";
-import { typeColors, Settings, CommissionTier, generateId, getTimezone, getLiveTime } from "@/lib/data";
+import { typeColors, Settings, Tier, generateId, getTimezone, getLiveTime } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
 
 export default function SettingsPage({ settings, setSettings }: { settings: Settings; setSettings: (fn: (s: Settings) => Settings) => void }) {
@@ -11,7 +11,8 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
   const [modal, setModal] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
-  const [editTiersId, setEditTiersId] = useState<string | null>(null);
+  // unified tier editor: { kind: "comp"|"kpis", id: string }
+  const [editTiers, setEditTiers] = useState<{ kind: string; id: string } | null>(null);
 
   useEffect(() => { const i = setInterval(() => setTick(p => p + 1), 30000); return () => clearInterval(i); }, []);
 
@@ -82,63 +83,68 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
     ))}</div>;
   }
 
-  // ─── TIER EDITOR MODAL ───
-  function TierEditor({ compId }: { compId: string }) {
-    const comp = settings.comp.find(c => c.id === compId);
-    if (!comp) return null;
-    const tiers = comp.tiers || [];
-    const basis = comp.tierBasis || "deals";
+  // ─── UNIFIED TIER EDITOR ───
+  function UnifiedTierEditor() {
+    if (!editTiers) return null;
+    const { kind, id } = editTiers;
+    const list: any[] = (settings as any)[kind];
+    const item = list.find((i: any) => i.id === id);
+    if (!item) return null;
+    const tiers: Tier[] = item.tiers || [];
+    const basis: string = item.tierBasis || "";
+    const itemName: string = item.name;
+    const isKpi = kind === "kpis";
+    const accentColor = isKpi ? t.purple : t.warning;
 
-    const updateComp = (updates: any) => {
-      setSettings(p => ({ ...p, comp: p.comp.map(c => c.id === compId ? { ...c, ...updates } : c) }));
+    const updateItem = (updates: any) => {
+      setSettings(p => ({ ...p, [kind]: (p as any)[kind].map((i: any) => i.id === id ? { ...i, ...updates } : i) }));
     };
 
     const addTier = () => {
-      const lastMax = tiers.length > 0 ? (tiers[tiers.length - 1].maxDeals ?? 0) + 1 : 0;
-      const newTier: CommissionTier = { id: generateId("tr"), minDeals: lastMax, maxDeals: null, rewardType: "percentage", rewardValue: 10 };
-      updateComp({ tiers: [...tiers, newTier] });
+      const lastMax = tiers.length > 0 ? (tiers[tiers.length - 1].max ?? 0) + 1 : 0;
+      const nt: Tier = { id: generateId("tr"), min: lastMax, max: null, label: "", rewardType: "percentage", rewardValue: 10 };
+      updateItem({ tiers: [...tiers, nt] });
     };
 
-    const updateTier = (tid: string, updates: Partial<CommissionTier>) => {
-      updateComp({ tiers: tiers.map(tr => tr.id === tid ? { ...tr, ...updates } : tr) });
+    const updateTier = (tid: string, updates: Partial<Tier>) => {
+      updateItem({ tiers: tiers.map(tr => tr.id === tid ? { ...tr, ...updates } : tr) });
     };
 
     const removeTier = (tid: string) => {
-      updateComp({ tiers: tiers.filter(tr => tr.id !== tid) });
+      updateItem({ tiers: tiers.filter(tr => tr.id !== tid) });
     };
 
     return (
-      <Modal title={`Commission Tiers — ${comp.name}`} onClose={() => setEditTiersId(null)} wide>
+      <Modal title={`Tiers — ${itemName}`} onClose={() => setEditTiers(null)} wide>
         <FormField label="Tiers based on">
-          <Select value={basis} onChange={v => updateComp({ tierBasis: v })} options={[
-            { value: "deals", label: "Number of deals" },
-            { value: "revenue", label: "Revenue generated ($)" },
-            { value: "volume", label: "Deal volume ($)" },
-            { value: "units", label: "Units sold" },
+          <Select value={basis} onChange={v => updateItem({ tierBasis: v })} options={[
+            { value: "", label: isKpi ? "Default (KPI unit: " + (item.unit || "—") + ")" : "Select basis" },
+            ...settings.commissionBases.map(cb => ({ value: cb.name, label: cb.name }))
           ]} />
         </FormField>
 
         <div style={{ marginTop: 16, marginBottom: 8 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "70px 10px 70px 1fr 100px 36px", gap: 8, alignItems: "center", marginBottom: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "65px 10px 65px 1fr 1fr 90px 36px", gap: 8, alignItems: "center", marginBottom: 8 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>From</span>
             <span />
             <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>To</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>Reward Type</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>Label</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>Reward</span>
             <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>Value</span>
             <span />
           </div>
 
           {tiers.map((tr, i) => (
-            <div key={tr.id} style={{ display: "grid", gridTemplateColumns: "70px 10px 70px 1fr 100px 36px", gap: 8, alignItems: "center", marginBottom: 8, padding: "8px 0", borderBottom: i < tiers.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
-              <input type="number" value={tr.minDeals} onChange={e => updateTier(tr.id, { minDeals: parseInt(e.target.value) || 0 })} style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
+            <div key={tr.id} style={{ display: "grid", gridTemplateColumns: "65px 10px 65px 1fr 1fr 90px 36px", gap: 8, alignItems: "center", marginBottom: 8, padding: "8px 0", borderBottom: i < tiers.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
+              <input type="number" value={tr.min} onChange={e => updateTier(tr.id, { min: parseInt(e.target.value) || 0 })} style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
               <span style={{ textAlign: "center" as const, color: t.textTertiary, fontSize: 13 }}>—</span>
-              <input type="number" value={tr.maxDeals ?? ""} onChange={e => updateTier(tr.id, { maxDeals: e.target.value === "" ? null : parseInt(e.target.value) })} placeholder="∞" style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
-              <Select value={tr.rewardType} onChange={v => updateTier(tr.id, { rewardType: v as any })} options={[{ value: "percentage", label: "% of volume" }, { value: "fixed", label: "Fixed amount ($)" }]} />
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {tr.rewardType === "percentage" && <span style={{ color: t.textTertiary, fontSize: 13 }}>%</span>}
-                {tr.rewardType === "fixed" && <span style={{ color: t.textTertiary, fontSize: 13 }}>$</span>}
+              <input type="number" value={tr.max ?? ""} onChange={e => updateTier(tr.id, { max: e.target.value === "" ? null : parseInt(e.target.value) })} placeholder="∞" style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
+              <input value={tr.label} onChange={e => updateTier(tr.id, { label: e.target.value })} placeholder="e.g. On target" style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, background: t.inputBg, color: t.text, outline: "none" }} />
+              <Select value={tr.rewardType} onChange={v => updateTier(tr.id, { rewardType: v as any })} options={[{ value: "none", label: "No reward" }, { value: "percentage", label: "% bonus" }, { value: "fixed", label: "Fixed ($)" }]} />
+              {tr.rewardType !== "none" ? <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ color: t.textTertiary, fontSize: 13 }}>{tr.rewardType === "percentage" ? "%" : "$"}</span>
                 <input type="number" value={tr.rewardValue} onChange={e => updateTier(tr.id, { rewardValue: parseFloat(e.target.value) || 0 })} style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
-              </div>
+              </div> : <span style={{ fontSize: 12, color: t.textTertiary, textAlign: "center" as const }}>—</span>}
               <button onClick={() => removeTier(tr.id)} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = t.dangerLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Trash2 size={14} color={t.danger} /></button>
             </div>
           ))}
@@ -149,21 +155,94 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
         {tiers.length > 0 && <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: t.bg, border: `1px solid ${t.borderLight}` }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: t.textTertiary, marginBottom: 10, textTransform: "uppercase" as const }}>Preview</div>
           {tiers.map(tr => {
-            const range = tr.maxDeals !== null ? `${tr.minDeals}–${tr.maxDeals}` : `${tr.minDeals}+`;
-            const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}%` : `$${tr.rewardValue.toLocaleString()}`;
-            const basisLabel = basis === "deals" ? "deals" : basis === "revenue" ? "revenue" : basis === "volume" ? "volume" : "units";
-            return <div key={tr.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13 }}>
-              <span style={{ color: t.textSecondary }}>{range} {basisLabel}</span>
-              <span style={{ fontWeight: 600, color: tr.rewardType === "percentage" ? t.accent : t.success }}>{reward}{tr.rewardType === "percentage" ? " of volume" : " per " + (basis === "deals" ? "deal" : "unit")}</span>
+            const range = tr.max !== null ? `${tr.min}–${tr.max}` : `${tr.min}+`;
+            const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}% bonus` : tr.rewardType === "fixed" ? `$${tr.rewardValue.toLocaleString()}` : "No reward";
+            const lColor = tr.rewardType === "none" ? t.textTertiary : tr.rewardType === "percentage" ? t.accent : t.success;
+            return <div key={tr.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", fontSize: 13 }}>
+              <span style={{ color: t.textSecondary }}>{range}</span>
+              <span style={{ fontWeight: 600, color: t.text }}>{tr.label || "—"}</span>
+              <span style={{ fontWeight: 600, color: lColor }}>{reward}</span>
             </div>;
           })}
         </div>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${t.border}` }}>
-          <Btn onClick={() => setEditTiersId(null)}>Done</Btn>
+          <Btn onClick={() => setEditTiers(null)}>Done</Btn>
         </div>
       </Modal>
     );
+  }
+
+  // ─── TIERED LIST (used for both comp & kpis) ───
+  function TieredList({ items, kind, extraCols }: { items: any[]; kind: string; extraCols: (it: any) => any }) {
+    const isKpi = kind === "kpis";
+    const accentColor = isKpi ? t.purple : t.warning;
+    return <div style={{ background: t.surface, borderRadius: 12, border: `1px solid ${t.border}`, overflow: "hidden" }}>
+      {items.map((it, i) => (
+        <div key={it.id} style={{ padding: "12px 18px", borderBottom: i < items.length - 1 ? `1px solid ${t.borderLight}` : "none" }} onMouseEnter={e => e.currentTarget.style.background = t.surfaceHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>
+                {it.tiers && it.tiers.length > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: accentColor, background: accentColor + "15", padding: "2px 6px", borderRadius: 4 }}><Layers size={10} />{it.tiers.length} tiers</span>}
+              </div>
+              <div style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</div>
+            </div>
+            {extraCols(it)}
+            <ScopeBadge scope={it.scope} value={it.sv} value2={it.sv2} />
+            <button onClick={() => setEditTiers({ kind, id: it.id })} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${it.tiers && it.tiers.length > 0 ? accentColor + "40" : t.border}`, background: it.tiers && it.tiers.length > 0 ? accentColor + "15" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} title="Edit tiers" onMouseEnter={e => e.currentTarget.style.background = accentColor + "15"} onMouseLeave={e => e.currentTarget.style.background = it.tiers && it.tiers.length > 0 ? accentColor + "15" : "transparent"}><Layers size={14} color={accentColor} /></button>
+            <button onClick={() => del(kind, it.id)} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }} onMouseEnter={e => e.currentTarget.style.background = t.dangerLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Trash2 size={14} color={t.danger} /></button>
+          </div>
+          {it.tiers && it.tiers.length > 0 && <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: t.bg, display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+            {it.tiers.map((tr: Tier) => {
+              const range = tr.max !== null ? `${tr.min}–${tr.max}` : `${tr.min}+`;
+              const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}%` : tr.rewardType === "fixed" ? `$${tr.rewardValue.toLocaleString()}` : "";
+              const lColor = tr.rewardType === "none" ? t.textTertiary : tr.rewardType === "percentage" ? t.accent : t.success;
+              return <span key={tr.id} style={{ fontSize: 11, color: t.textSecondary, background: t.surface, padding: "3px 8px", borderRadius: 6, border: `1px solid ${t.borderLight}` }}>{range}: <span style={{ fontWeight: 600, color: t.text }}>{tr.label || "—"}</span>{reward && <span style={{ color: lColor, marginLeft: 4 }}>{reward}</span>}</span>;
+            })}
+          </div>}
+        </div>
+      ))}
+    </div>;
+  }
+
+  // ─── COMMISSION BASES MANAGER ───
+  function CommBases() {
+    const [adding, setAdding] = useState(false);
+    const [newName, setNewName] = useState("");
+    const [newUnit, setNewUnit] = useState("");
+    const addBase = () => {
+      if (!newName.trim()) return;
+      setSettings(p => ({ ...p, commissionBases: [...p.commissionBases, { id: generateId("cb"), name: newName.trim(), unit: newUnit.trim() || newName.trim().toLowerCase() }] }));
+      setNewName(""); setNewUnit(""); setAdding(false); setToast("Basis added");
+    };
+    const removeBase = (id: string) => {
+      setSettings(p => ({ ...p, commissionBases: p.commissionBases.filter(cb => cb.id !== id) }));
+      setToast("Basis removed");
+    };
+    return <div style={{ marginTop: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div><h3 style={{ fontSize: 15, fontWeight: 650, color: t.text, margin: 0 }}>Tier Bases</h3><p style={{ fontSize: 12, color: t.textTertiary, margin: "4px 0 0" }}>Metrics that tiers can be measured by (shared across Compensation & KPIs)</p></div>
+        <Btn sm variant="secondary" icon={Plus} onClick={() => setAdding(true)}>Add</Btn>
+      </div>
+      <div style={{ background: t.surface, borderRadius: 12, border: `1px solid ${t.border}`, overflow: "hidden" }}>
+        {settings.commissionBases.map((cb, i) => (
+          <div key={cb.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 18px", borderBottom: i < settings.commissionBases.length - 1 ? `1px solid ${t.borderLight}` : "none" }} onMouseEnter={e => e.currentTarget.style.background = t.surfaceHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{cb.name}</span>
+              <span style={{ fontSize: 11, color: t.textTertiary, background: t.bg, padding: "2px 8px", borderRadius: 6 }}>unit: {cb.unit}</span>
+            </div>
+            <button onClick={() => removeBase(cb.id)} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = t.dangerLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Trash2 size={14} color={t.danger} /></button>
+          </div>
+        ))}
+        {adding && <div style={{ display: "flex", gap: 8, padding: "10px 18px", borderTop: `1px solid ${t.borderLight}`, alignItems: "center" }}>
+          <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Name (e.g. Contracts signed)" autoFocus onKeyDown={e => { if (e.key === "Enter") addBase(); if (e.key === "Escape") setAdding(false); }} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${t.accent}`, fontSize: 13, outline: "none", background: t.inputBg, color: t.text }} />
+          <input value={newUnit} onChange={e => setNewUnit(e.target.value)} placeholder="Unit" onKeyDown={e => { if (e.key === "Enter") addBase(); }} style={{ width: 120, padding: "8px 12px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, outline: "none", background: t.inputBg, color: t.text }} />
+          <Btn sm onClick={addBase} icon={Check}>Add</Btn>
+          <Btn sm variant="ghost" onClick={() => setAdding(false)}>Cancel</Btn>
+        </div>}
+      </div>
+    </div>;
   }
 
   // ─── ADD MODAL ───
@@ -177,6 +256,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
       if (!f.name) return;
       if (sec === "departments") { setSettings(p => ({ ...p, departments: [...p.departments, { id: generateId("d"), name: f.name, subs: [] }] })); }
       else if (sec === "comp") { setSettings(p => ({ ...p, comp: [...p.comp, { id: generateId("c"), tiers: [], tierBasis: "", ...f }] })); }
+      else if (sec === "kpis") { setSettings(p => ({ ...p, kpis: [...p.kpis, { id: generateId("k"), tiers: [], tierBasis: "", ...f }] })); }
       else { setSettings(p => ({ ...p, [sec]: [...(p as any)[sec], { id: generateId(sec[0]), ...f }] })); }
       setModal(false); setToast("Added successfully");
     };
@@ -200,44 +280,13 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
           {f.scope === "position_rank" && <><FormField label="Position"><Select value={f.sv || ""} onChange={v => u("sv", v)} options={posN} placeholder="Select position (blank = all)" /></FormField><FormField label="Rank"><Select value={f.sv2 || ""} onChange={v => u("sv2", v)} options={rkN} placeholder="Select rank (blank = all)" /></FormField></>}
           {f.scope === "employee" && <FormField label="Employee"><Select value={f.sv || ""} onChange={v => u("sv", v)} options={empN} placeholder="Select employee" /></FormField>}
           {sec === "comp" && <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Required</span><Toggle checked={f.req || false} onChange={v => u("req", v)} /></div>}
-          {sec === "comp" && f.type === "variable" && <div style={{ padding: "12px 16px", borderRadius: 10, background: t.accentLight, border: `1px solid ${t.accent}30`, marginTop: 8 }}><div style={{ fontSize: 13, fontWeight: 600, color: t.accent, marginBottom: 4 }}>Commission Tiers</div><div style={{ fontSize: 12, color: t.textSecondary }}>Save this item first, then click the tiers icon to set up commission tiers with ranges and rates.</div></div>}
+          <div style={{ padding: "12px 16px", borderRadius: 10, background: t.accentLight, border: `1px solid ${t.accent}30`, marginTop: 8 }}><div style={{ fontSize: 13, fontWeight: 600, color: t.accent, marginBottom: 4 }}>Tiers</div><div style={{ fontSize: 12, color: t.textSecondary }}>Save this item first, then click the tiers icon to set up performance tiers.</div></div>
         </>}
         {sec === "accounts" && <><FormField label="Provider" required><Input value={f.prov || ""} onChange={v => u("prov", v)} placeholder="e.g. Google, Slack" /></FormField><div style={{ display: "flex", gap: 24, padding: "8px 0" }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Required</span><Toggle checked={f.req || false} onChange={v => u("req", v)} /></div><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Auto-Provision</span><Toggle checked={f.auto || false} onChange={v => u("auto", v)} /></div></div></>}
         {sec === "contractTypes" && <><FormField label="Description"><Input value={f.desc || ""} onChange={v => u("desc", v)} placeholder="Description" /></FormField><FormField label="Duration"><Input value={f.duration || ""} onChange={v => u("duration", v)} placeholder="e.g. Indefinite, Fixed, 3-6 months" /></FormField><FormField label="Color"><Input value={f.color || "#2D5BFF"} onChange={v => u("color", v)} placeholder="#hex" /></FormField></>}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${t.border}` }}><Btn variant="secondary" onClick={() => setModal(false)}>Cancel</Btn><Btn onClick={save} icon={Plus}>Add</Btn></div>
       </Modal>
     );
-  }
-
-  // ─── COMP LIST with tiers button ───
-  function CompList() {
-    return <div style={{ background: t.surface, borderRadius: 12, border: `1px solid ${t.border}`, overflow: "hidden" }}>
-      {settings.comp.map((it, i) => (
-        <div key={it.id} style={{ padding: "12px 18px", borderBottom: i < settings.comp.length - 1 ? `1px solid ${t.borderLight}` : "none" }} onMouseEnter={e => e.currentTarget.style.background = t.surfaceHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 150px 60px 50px 48px", alignItems: "center", gap: 8 }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>
-                {it.tiers && it.tiers.length > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: t.warning, background: t.warningLight, padding: "2px 6px", borderRadius: 4 }}><Layers size={10} />{it.tiers.length} tiers</span>}
-              </div>
-              <div style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</div>
-            </div>
-            <span style={{ fontSize: 12, fontWeight: 600, color: typeColors[it.type], background: typeColors[it.type] + "15", padding: "3px 8px", borderRadius: 6, textTransform: "capitalize" as const, justifySelf: "start" }}>{it.type}</span>
-            <ScopeBadge scope={it.scope} value={it.sv} value2={it.sv2} />
-            <span>{it.req ? <Check size={16} color={t.success} /> : <span style={{ fontSize: 12, color: t.textTertiary }}>Opt</span>}</span>
-            {it.type === "variable" ? <button onClick={() => setEditTiersId(it.id)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${it.tiers && it.tiers.length > 0 ? t.warning + "40" : t.border}`, background: it.tiers && it.tiers.length > 0 ? t.warningLight : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} title="Edit commission tiers" onMouseEnter={e => e.currentTarget.style.background = t.warningLight} onMouseLeave={e => e.currentTarget.style.background = it.tiers && it.tiers.length > 0 ? t.warningLight : "transparent"}><Layers size={14} color={t.warning} /></button> : <span />}
-            <div style={{ display: "flex", justifyContent: "flex-end" }}><button onClick={() => del("comp", it.id)} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = t.dangerLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Trash2 size={14} color={t.danger} /></button></div>
-          </div>
-          {it.tiers && it.tiers.length > 0 && <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: t.bg, display: "flex", gap: 12, flexWrap: "wrap" as const }}>
-            {it.tiers.map(tr => {
-              const range = tr.maxDeals !== null ? `${tr.minDeals}–${tr.maxDeals}` : `${tr.minDeals}+`;
-              const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}%` : `$${tr.rewardValue.toLocaleString()}`;
-              return <span key={tr.id} style={{ fontSize: 11, color: t.textSecondary, background: t.surface, padding: "3px 8px", borderRadius: 6, border: `1px solid ${t.borderLight}` }}>{range}: <span style={{ fontWeight: 600, color: tr.rewardType === "percentage" ? t.accent : t.success }}>{reward}</span></span>;
-            })}
-          </div>}
-        </div>
-      ))}
-    </div>;
   }
 
   return (
@@ -260,14 +309,14 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
           {sec === "positions" && <Lst items={settings.positions} k="positions" cols="1fr 1fr 1fr 48px" render={(it: any) => <><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span><span style={{ fontSize: 13, color: t.textSecondary }}>{it.dept}</span><span style={{ fontSize: 12, color: t.purple, background: t.purpleLight, padding: "2px 8px", borderRadius: 6, justifySelf: "start" }}>{it.sub || "—"}</span></>} />}
           {sec === "ranks" && <Lst items={settings.ranks} k="ranks" cols="1fr 80px 60px 48px" render={(it: any) => <><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span><span style={{ fontSize: 13, color: t.textSecondary }}>Level {it.level}</span><div style={{ width: 20, height: 20, borderRadius: 6, background: it.color, border: `1px solid ${t.border}` }} /></>} />}
           {sec === "branches" && <Lst items={settings.branches} k="branches" cols="1fr 90px 130px 48px" render={(it: any) => { const lt = getLiveTime(it.tz); return <><div><div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>{it.isHQ && <span style={{ fontSize: 10, fontWeight: 700, color: t.accent, background: t.accentLight, padding: "2px 6px", borderRadius: 4 }}>HQ</span>}</div><span style={{ fontSize: 12, color: t.textTertiary }}>{it.address}</span></div><span style={{ fontSize: 13, color: t.textSecondary }}>{it.country}</span><div><span style={{ fontSize: 13, fontWeight: 600, color: t.accent, display: "flex", alignItems: "center", gap: 4 }}><Globe size={12} />{it.tz}</span>{lt && <span style={{ fontSize: 11, color: t.textTertiary, display: "flex", alignItems: "center", gap: 3, marginTop: 2 }}><Clock size={10} />{lt}</span>}</div></>; }} />}
-          {sec === "comp" && <CompList />}
-          {sec === "kpis" && <Lst items={settings.kpis} k="kpis" cols="1fr 90px 40px 150px 48px" render={(it: any) => <><div><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span><div style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</div></div><span style={{ fontSize: 12, color: t.textSecondary, background: t.bg, padding: "3px 8px", borderRadius: 6, justifySelf: "start" }}>{it.cat}</span><span style={{ fontSize: 13, color: t.textSecondary }}>{it.unit}</span><ScopeBadge scope={it.scope} value={it.sv} value2={it.sv2} /></>} />}
+          {sec === "comp" && <><TieredList items={settings.comp} kind="comp" extraCols={(it: any) => <><span style={{ fontSize: 12, fontWeight: 600, color: typeColors[it.type], background: typeColors[it.type] + "15", padding: "3px 8px", borderRadius: 6, textTransform: "capitalize" as const, flexShrink: 0 }}>{it.type}</span>{it.req ? <Check size={16} color={t.success} /> : <span style={{ fontSize: 12, color: t.textTertiary }}>Opt</span>}</>} /><CommBases /></>}
+          {sec === "kpis" && <TieredList items={settings.kpis} kind="kpis" extraCols={(it: any) => <><span style={{ fontSize: 12, color: t.textSecondary, background: t.bg, padding: "3px 8px", borderRadius: 6, flexShrink: 0 }}>{it.cat}</span><span style={{ fontSize: 13, color: t.textSecondary, flexShrink: 0 }}>{it.unit}</span></>} />}
           {sec === "accounts" && <Lst items={settings.accounts} k="accounts" cols="1fr 140px 80px 48px" render={(it: any) => <><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>{it.auto && <span style={{ fontSize: 10, fontWeight: 600, color: t.purple, background: t.purpleLight, padding: "2px 6px", borderRadius: 4 }}>Auto</span>}</div><span style={{ fontSize: 13, color: t.textSecondary }}>{it.prov}</span><span>{it.req ? <Check size={16} color={t.success} /> : <span style={{ fontSize: 12, color: t.textTertiary }}>Opt</span>}</span></>} />}
           {sec === "contractTypes" && <Lst items={settings.contractTypes} k="contractTypes" cols="1fr 120px 100px 48px" render={(it: any) => <><div><div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 12, height: 12, borderRadius: 3, background: it.color }} /><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span></div><span style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</span></div><span style={{ fontSize: 12, color: t.textSecondary }}>{it.duration}</span><span style={{ fontSize: 12, fontWeight: 600, color: it.color, background: it.color + "15", padding: "2px 8px", borderRadius: 6 }}>{it.name}</span></>} />}
         </div>
       </div>
       {modal && <AMod />}
-      {editTiersId && <TierEditor compId={editTiersId} />}
+      {editTiers && <UnifiedTierEditor />}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowLeft, Edit, Phone, Mail, MessageSquare, Building2, Landmark, Check, Plus, KeyRound, Clock, Briefcase, Award, GitBranch, MapPin, FileText, User, Calendar, X } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, MessageSquare, Building2, Landmark, Check, Plus, KeyRound, Clock, Briefcase, Award, GitBranch, MapPin, FileText, User, Calendar, X, Layers } from "lucide-react";
 import { Avatar, StatusBadge, ScopeBadge, Btn, Input, Modal, FormField, Select, Toast } from "@/components/ui/shared";
 import { typeColors, Settings, Employee, HistoryEntry, initialEmployees, generateId } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
@@ -206,7 +206,7 @@ export default function EmployeeDetail({ emp: initEmp, onBack, settings }: { emp
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}><span style={{ fontSize: 11, fontWeight: 700, color: t.warning, textTransform: "uppercase" as const }}>Commission Tiers</span><span style={{ fontSize: 11, color: t.textTertiary }}>Based on {c.tierBasis || "deals"}</span></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
             {c.tiers.map(tr => {
-              const range = tr.maxDeals !== null ? `${tr.minDeals}–${tr.maxDeals}` : `${tr.minDeals}+`;
+              const range = tr.max !== null ? `${tr.min}–${tr.max}` : `${tr.min}+`;
               const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}% of volume` : `$${tr.rewardValue.toLocaleString()} per ${c.tierBasis === "deals" ? "deal" : "unit"}`;
               return <div key={tr.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderRadius: 6, background: t.surface, border: `1px solid ${t.borderLight}` }}>
                 <span style={{ fontSize: 12, color: t.textSecondary }}>{range} {c.tierBasis || "deals"}</span>
@@ -222,11 +222,25 @@ export default function EmployeeDetail({ emp: initEmp, onBack, settings }: { emp
     {tab === "kpis" && <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.border}`, padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}><h3 style={{ fontSize: 15, fontWeight: 650, color: t.text, margin: 0 }}>KPIs</h3><Btn sm variant="secondary" icon={Edit}>Targets</Btn></div>
       <p style={{ fontSize: 12, color: t.textTertiary, marginBottom: 16 }}>Filtered by position ({emp.role}), rank ({emp.rank})</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{empKpis.map((k, i) => { const p = [78,92,85,95,60,88,72][i%7]; const pc = p >= 90 ? t.success : p >= 70 ? t.accent : t.warning; return <div key={k.id} style={{ padding: 18, borderRadius: 12, border: `1px solid ${t.borderLight}`, background: t.bg }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>{empKpis.map((k, i) => { const p = [78,92,85,95,60,88,72][i%7]; const pc = p >= 90 ? t.success : p >= 70 ? t.accent : t.warning; const activeTier = k.tiers && k.tiers.length > 0 ? k.tiers.find(tr => p >= tr.min && (tr.max === null || p <= tr.max)) : null; return <div key={k.id} style={{ padding: 18, borderRadius: 12, border: `1px solid ${t.borderLight}`, background: t.bg }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{k.name}</span><span style={{ fontSize: 11, color: t.textSecondary, background: t.surface, padding: "2px 8px", borderRadius: 6 }}>{k.cat}</span></div>
         <div style={{ marginBottom: 8 }}><ScopeBadge scope={k.scope} value={k.sv} value2={k.sv2} /></div>
         <div style={{ fontSize: 12, color: t.textTertiary, marginBottom: 12 }}>{k.desc}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ flex: 1, height: 6, borderRadius: 3, background: t.border }}><div style={{ height: 6, borderRadius: 3, background: pc, width: `${p}%` }} /></div><span style={{ fontSize: 13, fontWeight: 700, color: pc }}>{p}%</span></div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: k.tiers && k.tiers.length > 0 ? 12 : 0 }}><div style={{ flex: 1, height: 6, borderRadius: 3, background: t.border }}><div style={{ height: 6, borderRadius: 3, background: pc, width: `${p}%` }} /></div><span style={{ fontSize: 13, fontWeight: 700, color: pc }}>{p}%</span></div>
+        {k.tiers && k.tiers.length > 0 && <div style={{ padding: "8px 10px", borderRadius: 8, background: t.surface, border: `1px solid ${t.borderLight}` }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: t.purple, textTransform: "uppercase" as const, marginBottom: 6 }}>Performance Tiers{k.tierBasis ? ` (${k.tierBasis})` : ""}</div>
+          {k.tiers.map(tr => {
+            const range = tr.max !== null ? `${tr.min}–${tr.max}` : `${tr.min}+`;
+            const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}% bonus` : tr.rewardType === "fixed" ? `$${tr.rewardValue.toLocaleString()}` : "";
+            const isActive = activeTier && activeTier.id === tr.id;
+            return <div key={tr.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 6px", borderRadius: 4, fontSize: 11, background: isActive ? t.accentLight : "transparent", border: isActive ? `1px solid ${t.accent}30` : "1px solid transparent" }}>
+              <span style={{ color: t.textSecondary }}>{range}{k.unit ? ` ${k.unit}` : ""}</span>
+              <span style={{ fontWeight: 600, color: isActive ? t.accent : t.text }}>{tr.label}</span>
+              {reward && <span style={{ color: tr.rewardType === "percentage" ? t.accent : t.success, fontWeight: 600 }}>{reward}</span>}
+            </div>;
+          })}
+          {activeTier && <div style={{ marginTop: 6, fontSize: 11, fontWeight: 600, color: t.accent }}>Current: {activeTier.label}{activeTier.rewardType !== "none" ? ` → ${activeTier.rewardType === "percentage" ? activeTier.rewardValue + "% bonus" : "$" + activeTier.rewardValue.toLocaleString()}` : ""}</div>}
+        </div>}
       </div>; })}</div>
     </div>}
 

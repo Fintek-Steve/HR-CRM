@@ -5,11 +5,12 @@ export interface Position { id: string; name: string; dept: string; sub: string;
 export interface Rank { id: string; name: string; level: number; color: string; }
 export interface Branch { id: string; name: string; address: string; country: string; tz: string; isHQ: boolean; }
 
-export interface CommissionTier {
+export interface Tier {
   id: string;
-  minDeals: number;
-  maxDeals: number | null; // null = unlimited (e.g. "21+")
-  rewardType: "percentage" | "fixed"; // % of volume or fixed $
+  min: number;
+  max: number | null;       // null = unlimited (e.g. "21+")
+  label: string;            // e.g. "Exceeds expectations" or blank
+  rewardType: "percentage" | "fixed" | "none";
   rewardValue: number;
 }
 
@@ -18,23 +19,27 @@ export interface CompItem {
   desc: string; req: boolean;
   scope: "position_rank" | "employee";
   sv: string; sv2: string;
-  tiers: CommissionTier[]; // empty = no commission tiers
-  tierBasis: string; // what tiers measure: "deals", "revenue", "volume"
+  tiers: Tier[];
+  tierBasis: string;
 }
 
 export interface KPI {
   id: string; name: string; cat: string; unit: string; desc: string;
   scope: "position_rank" | "employee";
   sv: string; sv2: string;
+  tiers: Tier[];
+  tierBasis: string;
 }
 
 export interface Account { id: string; name: string; prov: string; req: boolean; auto: boolean; }
 export interface ContractType { id: string; name: string; desc: string; duration: string; color: string; }
+export interface CommissionBasis { id: string; name: string; unit: string; }
 
 export interface Settings {
   departments: Department[]; positions: Position[]; ranks: Rank[];
   branches: Branch[]; comp: CompItem[]; kpis: KPI[];
   accounts: Account[]; contractTypes: ContractType[];
+  commissionBases: CommissionBasis[];
 }
 
 export interface HistoryEntry {
@@ -180,26 +185,35 @@ export const initialSettings: Settings = {
     {id:"c3",name:"Annual Bonus",type:"variable",desc:"Performance-based yearly bonus",req:false,scope:"position_rank",sv:"",sv2:"",tiers:[],tierBasis:""},
     {id:"c4",name:"Stock Options",type:"equity",desc:"Company equity grants",req:false,scope:"position_rank",sv:"",sv2:"Senior",tiers:[],tierBasis:""},
     {id:"c5",name:"Health Insurance",type:"benefit",desc:"Medical coverage",req:true,scope:"position_rank",sv:"",sv2:"",tiers:[],tierBasis:""},
-    {id:"c6",name:"Sales Commission",type:"variable",desc:"Tiered commission on closed deals",req:false,scope:"position_rank",sv:"Sales Manager",sv2:"",tierBasis:"deals",tiers:[
-      {id:"t1",minDeals:0,maxDeals:5,rewardType:"percentage",rewardValue:15},
-      {id:"t2",minDeals:6,maxDeals:10,rewardType:"percentage",rewardValue:20},
-      {id:"t3",minDeals:11,maxDeals:20,rewardType:"percentage",rewardValue:25},
-      {id:"t4",minDeals:21,maxDeals:null,rewardType:"percentage",rewardValue:30},
+    {id:"c6",name:"Sales Commission",type:"variable",desc:"Tiered commission on closed deals",req:false,scope:"position_rank",sv:"Sales Manager",sv2:"",tierBasis:"Number of deals",tiers:[
+      {id:"t1",min:0,max:5,label:"Starter",rewardType:"percentage",rewardValue:15},
+      {id:"t2",min:6,max:10,label:"Growing",rewardType:"percentage",rewardValue:20},
+      {id:"t3",min:11,max:20,label:"Strong",rewardType:"percentage",rewardValue:25},
+      {id:"t4",min:21,max:null,label:"Top performer",rewardType:"percentage",rewardValue:30},
     ]},
-    {id:"c7",name:"Referral Bonus",type:"variable",desc:"Fixed bonus per successful referral",req:false,scope:"position_rank",sv:"Recruiter",sv2:"",tierBasis:"deals",tiers:[
-      {id:"t5",minDeals:0,maxDeals:3,rewardType:"fixed",rewardValue:500},
-      {id:"t6",minDeals:4,maxDeals:8,rewardType:"fixed",rewardValue:750},
-      {id:"t7",minDeals:9,maxDeals:null,rewardType:"fixed",rewardValue:1000},
+    {id:"c7",name:"Referral Bonus",type:"variable",desc:"Fixed bonus per successful referral",req:false,scope:"position_rank",sv:"Recruiter",sv2:"",tierBasis:"Referrals",tiers:[
+      {id:"t5",min:0,max:3,label:"Base",rewardType:"fixed",rewardValue:500},
+      {id:"t6",min:4,max:8,label:"Active",rewardType:"fixed",rewardValue:750},
+      {id:"t7",min:9,max:null,label:"Star recruiter",rewardType:"fixed",rewardValue:1000},
     ]},
   ],
   kpis: [
-    {id:"k1",name:"Revenue Target",cat:"Financial",unit:"$",desc:"Revenue goals",scope:"position_rank",sv:"",sv2:""},
-    {id:"k2",name:"Customer Satisfaction",cat:"Customer",unit:"score",desc:"CSAT/NPS targets",scope:"position_rank",sv:"",sv2:""},
-    {id:"k3",name:"Sprint Velocity",cat:"Productivity",unit:"points",desc:"Story points per sprint",scope:"position_rank",sv:"Software Engineer",sv2:""},
-    {id:"k4",name:"Code Quality",cat:"Quality",unit:"%",desc:"Code review pass rate",scope:"position_rank",sv:"Software Engineer",sv2:""},
-    {id:"k5",name:"Time to Hire",cat:"HR",unit:"days",desc:"Avg days to fill position",scope:"position_rank",sv:"Recruiter",sv2:""},
-    {id:"k6",name:"Employee Retention",cat:"HR",unit:"%",desc:"Annual retention rate",scope:"position_rank",sv:"",sv2:"Director"},
-    {id:"k7",name:"Project Delivery",cat:"Productivity",unit:"%",desc:"On-time delivery %",scope:"position_rank",sv:"",sv2:""},
+    {id:"k1",name:"Revenue Target",cat:"Financial",unit:"$",desc:"Revenue goals",scope:"position_rank",sv:"",sv2:"",tiers:[
+      {id:"kt1",min:0,max:79,label:"Below target",rewardType:"none",rewardValue:0},
+      {id:"kt2",min:80,max:99,label:"On target",rewardType:"percentage",rewardValue:5},
+      {id:"kt3",min:100,max:120,label:"Above target",rewardType:"percentage",rewardValue:10},
+      {id:"kt4",min:121,max:null,label:"Exceptional",rewardType:"percentage",rewardValue:15},
+    ],tierBasis:"Revenue generated"},
+    {id:"k2",name:"Customer Satisfaction",cat:"Customer",unit:"score",desc:"CSAT/NPS targets",scope:"position_rank",sv:"",sv2:"",tiers:[
+      {id:"kt5",min:0,max:60,label:"Needs improvement",rewardType:"none",rewardValue:0},
+      {id:"kt6",min:61,max:80,label:"Meets expectations",rewardType:"fixed",rewardValue:500},
+      {id:"kt7",min:81,max:100,label:"Exceeds expectations",rewardType:"fixed",rewardValue:1500},
+    ],tierBasis:""},
+    {id:"k3",name:"Sprint Velocity",cat:"Productivity",unit:"points",desc:"Story points per sprint",scope:"position_rank",sv:"Software Engineer",sv2:"",tiers:[],tierBasis:""},
+    {id:"k4",name:"Code Quality",cat:"Quality",unit:"%",desc:"Code review pass rate",scope:"position_rank",sv:"Software Engineer",sv2:"",tiers:[],tierBasis:""},
+    {id:"k5",name:"Time to Hire",cat:"HR",unit:"days",desc:"Avg days to fill position",scope:"position_rank",sv:"Recruiter",sv2:"",tiers:[],tierBasis:""},
+    {id:"k6",name:"Employee Retention",cat:"HR",unit:"%",desc:"Annual retention rate",scope:"position_rank",sv:"",sv2:"Director",tiers:[],tierBasis:""},
+    {id:"k7",name:"Project Delivery",cat:"Productivity",unit:"%",desc:"On-time delivery %",scope:"position_rank",sv:"",sv2:"",tiers:[],tierBasis:""},
   ],
   accounts: [
     {id:"a1",name:"Company Email",prov:"Google Workspace",req:true,auto:true},
@@ -218,6 +232,15 @@ export const initialSettings: Settings = {
     {id:"ct4",name:"Freelance",desc:"Project-based",duration:"Per project",color:"#7C3AED"},
     {id:"ct5",name:"Internship",desc:"Intern position",duration:"3-6 months",color:"#0891B2"},
     {id:"ct6",name:"Temporary",desc:"Temporary staffing",duration:"Variable",color:"#BE185D"},
+  ],
+  commissionBases: [
+    {id:"cb1",name:"Number of deals",unit:"deals"},
+    {id:"cb2",name:"Revenue generated",unit:"$"},
+    {id:"cb3",name:"Deal volume",unit:"$"},
+    {id:"cb4",name:"Units sold",unit:"units"},
+    {id:"cb5",name:"Referrals",unit:"referrals"},
+    {id:"cb6",name:"Contracts signed",unit:"contracts"},
+    {id:"cb7",name:"Accounts opened",unit:"accounts"},
   ],
 };
 
