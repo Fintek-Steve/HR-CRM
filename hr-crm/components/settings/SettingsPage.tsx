@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Building2, Briefcase, Award, Landmark, CreditCard, Target, KeyRound, Plus, Trash2, ChevronDown, ChevronUp, GitBranch, FolderTree, Check, X, Globe, Clock, FileText, Layers } from "lucide-react";
-import { Btn, Input, Select, Toggle, FormField, Modal, Toast, ScopeBadge } from "@/components/ui/shared";
+import { Btn, Input, MiniInput, Select, Toggle, FormField, Modal, Toast, ScopeBadge } from "@/components/ui/shared";
 import { typeColors, Settings, Tier, generateId, getTimezone, getLiveTime } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
 
@@ -62,7 +62,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
           ))}
           {at === d.id ? (
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <input value={sn} onChange={e => setSn(e.target.value)} placeholder="Sub-department name" autoFocus onKeyDown={e => { if (e.key === "Enter") addS(d.id); if (e.key === "Escape") { setAt(null); setSn(""); } }} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${t.accent}`, fontSize: 13, outline: "none", background: t.inputBg, color: t.text }} />
+              <MiniInput value={sn} onChange={v => setSn(v)} placeholder="Sub-department name" autoFocus onKeyDown={e => { if (e.key === "Enter") addS(d.id); }} onEscape={() => { setAt(null); setSn(""); }} style={{ flex: 1, border: `1px solid ${t.accent}` }} />
               <Btn sm onClick={() => addS(d.id)} icon={Check}>Add</Btn>
               <Btn sm variant="ghost" onClick={() => { setAt(null); setSn(""); }}>Cancel</Btn>
             </div>
@@ -136,14 +136,14 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
 
           {tiers.map((tr, i) => (
             <div key={tr.id} style={{ display: "grid", gridTemplateColumns: "65px 10px 65px 1fr 1fr 90px 36px", gap: 8, alignItems: "center", marginBottom: 8, padding: "8px 0", borderBottom: i < tiers.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
-              <input type="number" value={tr.min} onChange={e => updateTier(tr.id, { min: parseInt(e.target.value) || 0 })} style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
+              <MiniInput type="number" value={tr.min} onChange={v => updateTier(tr.id, { min: parseInt(v) || 0 })} style={{ textAlign: "center" }} />
               <span style={{ textAlign: "center" as const, color: t.textTertiary, fontSize: 13 }}>—</span>
-              <input type="number" value={tr.max ?? ""} onChange={e => updateTier(tr.id, { max: e.target.value === "" ? null : parseInt(e.target.value) })} placeholder="∞" style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
-              <input value={tr.label} onChange={e => updateTier(tr.id, { label: e.target.value })} placeholder="e.g. On target" style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, background: t.inputBg, color: t.text, outline: "none" }} />
+              <MiniInput type="number" value={tr.max ?? ""} onChange={v => updateTier(tr.id, { max: v === "" ? null : parseInt(v) })} placeholder="∞" style={{ textAlign: "center" }} />
+              <MiniInput value={tr.label} onChange={v => updateTier(tr.id, { label: v })} placeholder="e.g. On target" />
               <Select value={tr.rewardType} onChange={v => updateTier(tr.id, { rewardType: v as any })} options={[{ value: "none", label: "No reward" }, { value: "percentage", label: "% bonus" }, { value: "fixed", label: "Fixed ($)" }]} />
               {tr.rewardType !== "none" ? <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ color: t.textTertiary, fontSize: 13 }}>{tr.rewardType === "percentage" ? "%" : "$"}</span>
-                <input type="number" value={tr.rewardValue} onChange={e => updateTier(tr.id, { rewardValue: parseFloat(e.target.value) || 0 })} style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
+                <MiniInput type="number" value={tr.rewardValue} onChange={v => updateTier(tr.id, { rewardValue: parseFloat(v) || 0 })} style={{ textAlign: "center" }} />
               </div> : <span style={{ fontSize: 12, color: t.textTertiary, textAlign: "center" as const }}>—</span>}
               <button onClick={() => removeTier(tr.id)} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = t.dangerLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Trash2 size={14} color={t.danger} /></button>
             </div>
@@ -236,8 +236,8 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
           </div>
         ))}
         {adding && <div style={{ display: "flex", gap: 8, padding: "10px 18px", borderTop: `1px solid ${t.borderLight}`, alignItems: "center" }}>
-          <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Name (e.g. Contracts signed)" autoFocus onKeyDown={e => { if (e.key === "Enter") addBase(); if (e.key === "Escape") setAdding(false); }} style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: `1px solid ${t.accent}`, fontSize: 13, outline: "none", background: t.inputBg, color: t.text }} />
-          <input value={newUnit} onChange={e => setNewUnit(e.target.value)} placeholder="Unit" onKeyDown={e => { if (e.key === "Enter") addBase(); }} style={{ width: 120, padding: "8px 12px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, outline: "none", background: t.inputBg, color: t.text }} />
+          <MiniInput value={newName} onChange={v => setNewName(v)} placeholder="Name (e.g. Contracts signed)" autoFocus onKeyDown={e => { if (e.key === "Enter") addBase(); }} onEscape={() => setAdding(false)} style={{ flex: 1, border: `1px solid ${t.accent}` }} />
+          <MiniInput value={newUnit} onChange={v => setNewUnit(v)} placeholder="Unit" onKeyDown={e => { if (e.key === "Enter") addBase(); }} style={{ width: 120 }} />
           <Btn sm onClick={addBase} icon={Check}>Add</Btn>
           <Btn sm variant="ghost" onClick={() => setAdding(false)}>Cancel</Btn>
         </div>}

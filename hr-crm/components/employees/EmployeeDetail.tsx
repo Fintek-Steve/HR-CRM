@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { ArrowLeft, Edit, Phone, Mail, MessageSquare, Building2, Landmark, Check, Plus, KeyRound, Clock, Briefcase, Award, GitBranch, MapPin, FileText, User, Calendar, X, Layers } from "lucide-react";
-import { Avatar, StatusBadge, ScopeBadge, Btn, Input, Modal, FormField, Select, Toast } from "@/components/ui/shared";
+import { Avatar, StatusBadge, ScopeBadge, Btn, Input, MiniInput, Modal, FormField, Select, Toast } from "@/components/ui/shared";
 import { typeColors, Settings, Employee, HistoryEntry, initialEmployees, generateId } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
 
@@ -161,11 +161,11 @@ export default function EmployeeDetail({ emp: initEmp, onBack, settings }: { emp
                     <div style={{ marginTop: 10, display: "flex", flexDirection: "column" as const, gap: 8 }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <label style={{ fontSize: 12, color: t.textSecondary, width: 40 }}>Date</label>
-                        <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${t.accent}`, fontSize: 13, background: t.inputBg, color: t.text, outline: "none" }} />
+                        <MiniInput type="date" value={editDate} onChange={v => setEditDate(v)} style={{ border: `1px solid ${t.accent}` }} />
                       </div>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <label style={{ fontSize: 12, color: t.textSecondary, width: 40 }}>Note</label>
-                        <input value={editNote} onChange={e => setEditNote(e.target.value)} style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: `1px solid ${t.accent}`, fontSize: 13, background: t.inputBg, color: t.text, outline: "none" }} />
+                        <MiniInput value={editNote} onChange={v => setEditNote(v)} style={{ flex: 1, border: `1px solid ${t.accent}` }} />
                       </div>
                       <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
                         <Btn sm onClick={saveEdit} icon={Check}>Save</Btn>
