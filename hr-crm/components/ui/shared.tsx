@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, ReactNode } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import { X, Check } from "lucide-react";
 import { avatarColors } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
@@ -45,7 +45,12 @@ export function Btn({ children, variant = "primary", onClick, icon: Icon, sm, di
 
 export function Input({ value, onChange, placeholder, type = "text", disabled = false }: { value: string | number; onChange: (v: string) => void; placeholder?: string; type?: string; disabled?: boolean }) {
   const { theme: t } = useTheme();
-  return <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid ${t.border}`, fontSize: 14, color: disabled ? t.textTertiary : t.text, outline: "none", background: disabled ? t.inputDisabledBg : t.inputBg, boxSizing: "border-box" as const }} onFocus={e => { if (!disabled) e.target.style.borderColor = t.accent; }} onBlur={e => { e.target.style.borderColor = t.border; }} />;
+  const [local, setLocal] = useState(String(value ?? ""));
+  const ref = useRef<HTMLInputElement>(null);
+  // Sync from parent only when value actually changes externally
+  useEffect(() => { if (document.activeElement !== ref.current) setLocal(String(value ?? "")); }, [value]);
+  const commit = () => { if (local !== String(value ?? "")) onChange(local); };
+  return <input ref={ref} type={type} value={local} onChange={e => { setLocal(e.target.value); if (type === "date" || type === "number") onChange(e.target.value); }} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") commit(); }} placeholder={placeholder} disabled={disabled} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid ${t.border}`, fontSize: 14, color: disabled ? t.textTertiary : t.text, outline: "none", background: disabled ? t.inputDisabledBg : t.inputBg, boxSizing: "border-box" as const }} onFocus={e => { if (!disabled) e.target.style.borderColor = t.accent; }} />;
 }
 
 export function Select({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: (string | { value: string; label: string })[]; placeholder?: string }) {

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Briefcase, Calendar, DollarSign } from "lucide-react";
 import { ThemeProvider, useTheme } from "@/lib/ThemeContext";
 import Sidebar from "@/components/layout/Sidebar";
@@ -10,6 +10,12 @@ import EmployeeDetail from "@/components/employees/EmployeeDetail";
 import SettingsPage from "@/components/settings/SettingsPage";
 import PlaceholderPage from "@/components/PlaceholderPage";
 import { initialSettings, initialEmployees, Settings, Employee } from "@/lib/data";
+
+function loadState<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try { const s = localStorage.getItem(key); if (s) return JSON.parse(s); } catch {}
+  return fallback;
+}
 
 const pageConfig: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: "Dashboard", subtitle: "Welcome back, Rachel." },
@@ -24,7 +30,11 @@ function AppInner() {
   const { theme: t } = useTheme();
   const [page, setPage] = useState("dashboard");
   const [selEmp, setSelEmp] = useState<Employee | null>(null);
-  const [settings, setSettings] = useState<Settings>(initialSettings);
+  const [settings, setSettings] = useState<Settings>(() => loadState("peopleos_settings", initialSettings));
+  const [employees] = useState<Employee[]>(() => loadState("peopleos_employees", initialEmployees));
+
+  useEffect(() => { localStorage.setItem("peopleos_settings", JSON.stringify(settings)); }, [settings]);
+
   const nav = (p: string) => { setPage(p); setSelEmp(null); };
   const cur = selEmp ? { title: "Employee Profile", subtitle: selEmp.nm } : pageConfig[page];
 
@@ -36,7 +46,7 @@ function AppInner() {
         <div style={{ overflowY: "auto", height: "calc(100vh - 73px)" }}>
           {selEmp ? <EmployeeDetail emp={selEmp} onBack={() => setSelEmp(null)} settings={settings} />
             : page === "dashboard" ? <DashboardPage onNavigate={nav} />
-            : page === "employees" ? <EmployeesPage onSelect={setSelEmp} settings={settings} employees={initialEmployees} />
+            : page === "employees" ? <EmployeesPage onSelect={setSelEmp} settings={settings} employees={employees} />
             : page === "settings" ? <SettingsPage settings={settings} setSettings={setSettings} />
             : page === "recruitment" ? <PlaceholderPage title="Recruitment & ATS" icon={Briefcase} />
             : page === "leave" ? <PlaceholderPage title="Leave Management" icon={Calendar} />
