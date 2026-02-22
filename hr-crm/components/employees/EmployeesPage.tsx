@@ -5,36 +5,45 @@ import { Avatar, StatusBadge, Btn } from "@/components/ui/shared";
 import { Settings, Employee } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
 
+// Parse dob as local date (avoid UTC offset issues)
+function parseDob(dob: string): { month: number; day: number } | null {
+  if (!dob) return null;
+  const parts = dob.split("-");
+  if (parts.length < 3) return null;
+  return { month: parseInt(parts[1]) - 1, day: parseInt(parts[2]) };
+}
+
 function isBirthdayInRange(dob: string, daysAhead: number): boolean {
-  if (!dob) return false;
+  const p = parseDob(dob);
+  if (!p) return false;
   const today = new Date(); today.setHours(0,0,0,0);
-  const d = new Date(dob);
-  const bday = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+  const bday = new Date(today.getFullYear(), p.month, p.day);
   if (bday < today) bday.setFullYear(bday.getFullYear() + 1);
   const diff = (bday.getTime() - today.getTime()) / (1000*60*60*24);
   return diff >= 0 && diff <= daysAhead;
 }
 
 function isBirthdayToday(dob: string): boolean {
-  if (!dob) return false;
+  const p = parseDob(dob);
+  if (!p) return false;
   const today = new Date();
-  const d = new Date(dob);
-  return d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  return p.month === today.getMonth() && p.day === today.getDate();
 }
 
 function daysUntilBirthday(dob: string): number {
-  if (!dob) return 999;
+  const p = parseDob(dob);
+  if (!p) return 999;
   const today = new Date(); today.setHours(0,0,0,0);
-  const d = new Date(dob);
-  const bday = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+  const bday = new Date(today.getFullYear(), p.month, p.day);
   if (bday < today) bday.setFullYear(bday.getFullYear() + 1);
   return Math.round((bday.getTime() - today.getTime()) / (1000*60*60*24));
 }
 
 function formatDob(dob: string): string {
-  if (!dob) return "";
-  const d = new Date(dob);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const p = parseDob(dob);
+  if (!p) return "";
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[p.month]} ${p.day}`;
 }
 
 export default function EmployeesPage({ onSelect, settings, employees }: { onSelect: (e: Employee) => void; settings: Settings; employees: Employee[] }) {
@@ -60,16 +69,16 @@ export default function EmployeesPage({ onSelect, settings, employees }: { onSel
     return true;
   }), [employees, q, deptFilter, subFilter, statusFilter]);
 
-  // Headcount stats
-  const totalActive = employees.filter(e => e.st === "active").length;
-  const totalOnLeave = employees.filter(e => e.st === "on_leave").length;
-  const totalInactive = employees.filter(e => e.st === "inactive").length;
-  // Mock: 1 month ago headcount (assume 1 less active, simulating a recent hire)
-  const prevMonthActive = totalActive - 1;
+  // Headcount stats (based on filtered results)
+  const totalActive = filtered.filter(e => e.st === "active").length;
+  const totalOnLeave = filtered.filter(e => e.st === "on_leave").length;
+  const totalInactive = filtered.filter(e => e.st === "inactive").length;
+  // Mock: 1 month ago headcount (assume 1 less active per filter scope)
+  const prevMonthActive = Math.max(0, totalActive - 1);
   const headcountChange = totalActive - prevMonthActive;
 
-  // Upcoming birthdays (next 7 days)
-  const upcomingBdays = employees.filter(e => e.st !== "inactive" && isBirthdayInRange(e.dob, 7)).sort((a, b) => daysUntilBirthday(a.dob) - daysUntilBirthday(b.dob));
+  // Upcoming birthdays (next 7 days, from filtered employees)
+  const upcomingBdays = filtered.filter(e => e.st !== "inactive" && isBirthdayInRange(e.dob, 7)).sort((a, b) => daysUntilBirthday(a.dob) - daysUntilBirthday(b.dob));
 
   const hasFilters = deptFilter !== "All" || subFilter !== "All" || statusFilter !== "All";
 
@@ -104,7 +113,7 @@ export default function EmployeesPage({ onSelect, settings, employees }: { onSel
         <div style={{ textAlign: "center" as const }}><div style={{ fontSize: 18, fontWeight: 700, color: t.textTertiary }}>{totalInactive}</div><div style={{ fontSize: 11, color: t.textTertiary }}>Inactive</div></div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px", background: t.surface, borderRadius: 12, border: `1px solid ${t.border}` }}>
-        <div style={{ textAlign: "center" as const }}><div style={{ fontSize: 18, fontWeight: 700, color: t.text }}>{employees.length}</div><div style={{ fontSize: 11, color: t.textTertiary }}>Total</div></div>
+        <div style={{ textAlign: "center" as const }}><div style={{ fontSize: 18, fontWeight: 700, color: t.text }}>{filtered.length}</div><div style={{ fontSize: 11, color: t.textTertiary }}>Total</div></div>
       </div>
     </div>
 
