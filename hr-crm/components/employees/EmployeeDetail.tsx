@@ -197,9 +197,24 @@ export default function EmployeeDetail({ emp: initEmp, onBack, settings }: { emp
     {tab === "compensation" && <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.border}`, padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}><h3 style={{ fontSize: 15, fontWeight: 650, color: t.text, margin: 0 }}>Compensation</h3><Btn sm variant="secondary" icon={Edit}>Edit</Btn></div>
       <p style={{ fontSize: 12, color: t.textTertiary, marginBottom: 16 }}>Filtered by position ({emp.role}), rank ({emp.rank})</p>
-      {empComp.map((c, i) => <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: i < empComp.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" as const }}><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{c.name}</span><span style={{ fontSize: 10, fontWeight: 600, color: typeColors[c.type], background: typeColors[c.type] + "15", padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" as const }}>{c.type}</span><ScopeBadge scope={c.scope} value={c.sv} value2={c.sv2} /></div>
-        <span style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{amounts[c.name] || "—"}</span>
+      {empComp.map((c, i) => <div key={c.id} style={{ padding: "14px 0", borderBottom: i < empComp.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" as const }}><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{c.name}</span><span style={{ fontSize: 10, fontWeight: 600, color: typeColors[c.type], background: typeColors[c.type] + "15", padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" as const }}>{c.type}</span><ScopeBadge scope={c.scope} value={c.sv} value2={c.sv2} /></div>
+          <span style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{amounts[c.name] || "—"}</span>
+        </div>
+        {c.tiers && c.tiers.length > 0 && <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: t.bg, border: `1px solid ${t.borderLight}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}><span style={{ fontSize: 11, fontWeight: 700, color: t.warning, textTransform: "uppercase" as const }}>Commission Tiers</span><span style={{ fontSize: 11, color: t.textTertiary }}>Based on {c.tierBasis || "deals"}</span></div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            {c.tiers.map(tr => {
+              const range = tr.maxDeals !== null ? `${tr.minDeals}–${tr.maxDeals}` : `${tr.minDeals}+`;
+              const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}% of volume` : `$${tr.rewardValue.toLocaleString()} per ${c.tierBasis === "deals" ? "deal" : "unit"}`;
+              return <div key={tr.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", borderRadius: 6, background: t.surface, border: `1px solid ${t.borderLight}` }}>
+                <span style={{ fontSize: 12, color: t.textSecondary }}>{range} {c.tierBasis || "deals"}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: tr.rewardType === "percentage" ? t.accent : t.success }}>{reward}</span>
+              </div>;
+            })}
+          </div>
+        </div>}
       </div>)}
     </div>}
 

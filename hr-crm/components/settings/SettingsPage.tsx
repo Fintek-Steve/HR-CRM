@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Building2, Briefcase, Award, Landmark, CreditCard, Target, KeyRound, Plus, Trash2, ChevronDown, ChevronUp, GitBranch, FolderTree, Check, X, Globe, Clock, FileText } from "lucide-react";
+import { Building2, Briefcase, Award, Landmark, CreditCard, Target, KeyRound, Plus, Trash2, ChevronDown, ChevronUp, GitBranch, FolderTree, Check, X, Globe, Clock, FileText, Layers } from "lucide-react";
 import { Btn, Input, Select, Toggle, FormField, Modal, Toast, ScopeBadge } from "@/components/ui/shared";
-import { typeColors, Settings, generateId, getTimezone, getLiveTime } from "@/lib/data";
+import { typeColors, Settings, CommissionTier, generateId, getTimezone, getLiveTime } from "@/lib/data";
 import { useTheme } from "@/lib/ThemeContext";
 
 export default function SettingsPage({ settings, setSettings }: { settings: Settings; setSettings: (fn: (s: Settings) => Settings) => void }) {
@@ -11,8 +11,8 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
   const [modal, setModal] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
+  const [editTiersId, setEditTiersId] = useState<string | null>(null);
 
-  // Update live times every 30s
   useEffect(() => { const i = setInterval(() => setTick(p => p + 1), 30000); return () => clearInterval(i); }, []);
 
   const sections = [
@@ -28,7 +28,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
 
   const del = (key: string, id: string) => { setSettings((p: any) => ({ ...p, [key]: p[key].filter((i: any) => i.id !== id) })); setToast("Removed"); };
 
-  // ─── DEPARTMENTS (fix #2: stays open) ───
+  // ─── DEPARTMENTS ───
   function DeptSec() {
     const [ex, setEx] = useState<Record<string, boolean>>({});
     const [at, setAt] = useState<string | null>(null);
@@ -38,12 +38,10 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
       if (!sn.trim()) return;
       setSettings(p => ({ ...p, departments: p.departments.map(d => d.id === did ? { ...d, subs: [...d.subs, { id: generateId("sd"), name: sn.trim() }] } : d) }));
       setSn(""); setAt(null); setToast("Sub-department added");
-      // Keep dept open — don't change ex state
     };
     const remS = (did: string, sid: string) => {
       setSettings(p => ({ ...p, departments: p.departments.map(d => d.id === did ? { ...d, subs: d.subs.filter(s => s.id !== sid) } : d) }));
       setToast("Sub-department removed");
-      // Keep dept open — don't change ex state
     };
     return <div>{settings.departments.map(d => (
       <div key={d.id} style={{ background: t.surface, borderRadius: 12, border: `1px solid ${t.border}`, marginBottom: 8, overflow: "hidden" }}>
@@ -84,9 +82,93 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
     ))}</div>;
   }
 
-  // ─── ADD MODAL (fixes #3 #4 #5 #6) ───
+  // ─── TIER EDITOR MODAL ───
+  function TierEditor({ compId }: { compId: string }) {
+    const comp = settings.comp.find(c => c.id === compId);
+    if (!comp) return null;
+    const tiers = comp.tiers || [];
+    const basis = comp.tierBasis || "deals";
+
+    const updateComp = (updates: any) => {
+      setSettings(p => ({ ...p, comp: p.comp.map(c => c.id === compId ? { ...c, ...updates } : c) }));
+    };
+
+    const addTier = () => {
+      const lastMax = tiers.length > 0 ? (tiers[tiers.length - 1].maxDeals ?? 0) + 1 : 0;
+      const newTier: CommissionTier = { id: generateId("tr"), minDeals: lastMax, maxDeals: null, rewardType: "percentage", rewardValue: 10 };
+      updateComp({ tiers: [...tiers, newTier] });
+    };
+
+    const updateTier = (tid: string, updates: Partial<CommissionTier>) => {
+      updateComp({ tiers: tiers.map(tr => tr.id === tid ? { ...tr, ...updates } : tr) });
+    };
+
+    const removeTier = (tid: string) => {
+      updateComp({ tiers: tiers.filter(tr => tr.id !== tid) });
+    };
+
+    return (
+      <Modal title={`Commission Tiers — ${comp.name}`} onClose={() => setEditTiersId(null)} wide>
+        <FormField label="Tiers based on">
+          <Select value={basis} onChange={v => updateComp({ tierBasis: v })} options={[
+            { value: "deals", label: "Number of deals" },
+            { value: "revenue", label: "Revenue generated ($)" },
+            { value: "volume", label: "Deal volume ($)" },
+            { value: "units", label: "Units sold" },
+          ]} />
+        </FormField>
+
+        <div style={{ marginTop: 16, marginBottom: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "70px 10px 70px 1fr 100px 36px", gap: 8, alignItems: "center", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>From</span>
+            <span />
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>To</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>Reward Type</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: t.textTertiary, textTransform: "uppercase" as const }}>Value</span>
+            <span />
+          </div>
+
+          {tiers.map((tr, i) => (
+            <div key={tr.id} style={{ display: "grid", gridTemplateColumns: "70px 10px 70px 1fr 100px 36px", gap: 8, alignItems: "center", marginBottom: 8, padding: "8px 0", borderBottom: i < tiers.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
+              <input type="number" value={tr.minDeals} onChange={e => updateTier(tr.id, { minDeals: parseInt(e.target.value) || 0 })} style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
+              <span style={{ textAlign: "center" as const, color: t.textTertiary, fontSize: 13 }}>—</span>
+              <input type="number" value={tr.maxDeals ?? ""} onChange={e => updateTier(tr.id, { maxDeals: e.target.value === "" ? null : parseInt(e.target.value) })} placeholder="∞" style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
+              <Select value={tr.rewardType} onChange={v => updateTier(tr.id, { rewardType: v as any })} options={[{ value: "percentage", label: "% of volume" }, { value: "fixed", label: "Fixed amount ($)" }]} />
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {tr.rewardType === "percentage" && <span style={{ color: t.textTertiary, fontSize: 13 }}>%</span>}
+                {tr.rewardType === "fixed" && <span style={{ color: t.textTertiary, fontSize: 13 }}>$</span>}
+                <input type="number" value={tr.rewardValue} onChange={e => updateTier(tr.id, { rewardValue: parseFloat(e.target.value) || 0 })} style={{ width: "100%", padding: "8px", borderRadius: 8, border: `1px solid ${t.border}`, fontSize: 13, textAlign: "center" as const, background: t.inputBg, color: t.text, outline: "none" }} />
+              </div>
+              <button onClick={() => removeTier(tr.id)} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = t.dangerLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Trash2 size={14} color={t.danger} /></button>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={addTier} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", borderRadius: 8, border: `1px dashed ${t.border}`, background: "transparent", cursor: "pointer", fontSize: 13, color: t.accent, fontWeight: 500, width: "100%" }}><Plus size={14} /> Add Tier</button>
+
+        {tiers.length > 0 && <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: t.bg, border: `1px solid ${t.borderLight}` }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: t.textTertiary, marginBottom: 10, textTransform: "uppercase" as const }}>Preview</div>
+          {tiers.map(tr => {
+            const range = tr.maxDeals !== null ? `${tr.minDeals}–${tr.maxDeals}` : `${tr.minDeals}+`;
+            const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}%` : `$${tr.rewardValue.toLocaleString()}`;
+            const basisLabel = basis === "deals" ? "deals" : basis === "revenue" ? "revenue" : basis === "volume" ? "volume" : "units";
+            return <div key={tr.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 13 }}>
+              <span style={{ color: t.textSecondary }}>{range} {basisLabel}</span>
+              <span style={{ fontWeight: 600, color: tr.rewardType === "percentage" ? t.accent : t.success }}>{reward}{tr.rewardType === "percentage" ? " of volume" : " per " + (basis === "deals" ? "deal" : "unit")}</span>
+            </div>;
+          })}
+        </div>}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${t.border}` }}>
+          <Btn onClick={() => setEditTiersId(null)}>Done</Btn>
+        </div>
+      </Modal>
+    );
+  }
+
+  // ─── ADD MODAL ───
   function AMod() {
-    const [f, sF] = useState<Record<string, any>>(sec === "comp" || sec === "kpis" ? { scope: "position_rank", sv: "", sv2: "" } : {});
+    const [f, sF] = useState<Record<string, any>>(sec === "comp" || sec === "kpis" ? { scope: "position_rank", sv: "", sv2: "", tiers: [], tierBasis: "" } : {});
     const u = (k: string, v: any) => sF(p => ({ ...p, [k]: v }));
     const selD = settings.departments.find(d => d.name === f.dept);
     const subO = selD ? selD.subs.map(s => s.name) : [];
@@ -94,6 +176,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
     const save = () => {
       if (!f.name) return;
       if (sec === "departments") { setSettings(p => ({ ...p, departments: [...p.departments, { id: generateId("d"), name: f.name, subs: [] }] })); }
+      else if (sec === "comp") { setSettings(p => ({ ...p, comp: [...p.comp, { id: generateId("c"), tiers: [], tierBasis: "", ...f }] })); }
       else { setSettings(p => ({ ...p, [sec]: [...(p as any)[sec], { id: generateId(sec[0]), ...f }] })); }
       setModal(false); setToast("Added successfully");
     };
@@ -117,12 +200,44 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
           {f.scope === "position_rank" && <><FormField label="Position"><Select value={f.sv || ""} onChange={v => u("sv", v)} options={posN} placeholder="Select position (blank = all)" /></FormField><FormField label="Rank"><Select value={f.sv2 || ""} onChange={v => u("sv2", v)} options={rkN} placeholder="Select rank (blank = all)" /></FormField></>}
           {f.scope === "employee" && <FormField label="Employee"><Select value={f.sv || ""} onChange={v => u("sv", v)} options={empN} placeholder="Select employee" /></FormField>}
           {sec === "comp" && <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Required</span><Toggle checked={f.req || false} onChange={v => u("req", v)} /></div>}
+          {sec === "comp" && f.type === "variable" && <div style={{ padding: "12px 16px", borderRadius: 10, background: t.accentLight, border: `1px solid ${t.accent}30`, marginTop: 8 }}><div style={{ fontSize: 13, fontWeight: 600, color: t.accent, marginBottom: 4 }}>Commission Tiers</div><div style={{ fontSize: 12, color: t.textSecondary }}>Save this item first, then click the tiers icon to set up commission tiers with ranges and rates.</div></div>}
         </>}
         {sec === "accounts" && <><FormField label="Provider" required><Input value={f.prov || ""} onChange={v => u("prov", v)} placeholder="e.g. Google, Slack" /></FormField><div style={{ display: "flex", gap: 24, padding: "8px 0" }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Required</span><Toggle checked={f.req || false} onChange={v => u("req", v)} /></div><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Auto-Provision</span><Toggle checked={f.auto || false} onChange={v => u("auto", v)} /></div></div></>}
         {sec === "contractTypes" && <><FormField label="Description"><Input value={f.desc || ""} onChange={v => u("desc", v)} placeholder="Description" /></FormField><FormField label="Duration"><Input value={f.duration || ""} onChange={v => u("duration", v)} placeholder="e.g. Indefinite, Fixed, 3-6 months" /></FormField><FormField label="Color"><Input value={f.color || "#2D5BFF"} onChange={v => u("color", v)} placeholder="#hex" /></FormField></>}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${t.border}` }}><Btn variant="secondary" onClick={() => setModal(false)}>Cancel</Btn><Btn onClick={save} icon={Plus}>Add</Btn></div>
       </Modal>
     );
+  }
+
+  // ─── COMP LIST with tiers button ───
+  function CompList() {
+    return <div style={{ background: t.surface, borderRadius: 12, border: `1px solid ${t.border}`, overflow: "hidden" }}>
+      {settings.comp.map((it, i) => (
+        <div key={it.id} style={{ padding: "12px 18px", borderBottom: i < settings.comp.length - 1 ? `1px solid ${t.borderLight}` : "none" }} onMouseEnter={e => e.currentTarget.style.background = t.surfaceHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 150px 60px 50px 48px", alignItems: "center", gap: 8 }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>
+                {it.tiers && it.tiers.length > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 10, fontWeight: 700, color: t.warning, background: t.warningLight, padding: "2px 6px", borderRadius: 4 }}><Layers size={10} />{it.tiers.length} tiers</span>}
+              </div>
+              <div style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</div>
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: typeColors[it.type], background: typeColors[it.type] + "15", padding: "3px 8px", borderRadius: 6, textTransform: "capitalize" as const, justifySelf: "start" }}>{it.type}</span>
+            <ScopeBadge scope={it.scope} value={it.sv} value2={it.sv2} />
+            <span>{it.req ? <Check size={16} color={t.success} /> : <span style={{ fontSize: 12, color: t.textTertiary }}>Opt</span>}</span>
+            {it.type === "variable" ? <button onClick={() => setEditTiersId(it.id)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${it.tiers && it.tiers.length > 0 ? t.warning + "40" : t.border}`, background: it.tiers && it.tiers.length > 0 ? t.warningLight : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} title="Edit commission tiers" onMouseEnter={e => e.currentTarget.style.background = t.warningLight} onMouseLeave={e => e.currentTarget.style.background = it.tiers && it.tiers.length > 0 ? t.warningLight : "transparent"}><Layers size={14} color={t.warning} /></button> : <span />}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}><button onClick={() => del("comp", it.id)} style={{ width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} onMouseEnter={e => e.currentTarget.style.background = t.dangerLight} onMouseLeave={e => e.currentTarget.style.background = "transparent"}><Trash2 size={14} color={t.danger} /></button></div>
+          </div>
+          {it.tiers && it.tiers.length > 0 && <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: t.bg, display: "flex", gap: 12, flexWrap: "wrap" as const }}>
+            {it.tiers.map(tr => {
+              const range = tr.maxDeals !== null ? `${tr.minDeals}–${tr.maxDeals}` : `${tr.minDeals}+`;
+              const reward = tr.rewardType === "percentage" ? `${tr.rewardValue}%` : `$${tr.rewardValue.toLocaleString()}`;
+              return <span key={tr.id} style={{ fontSize: 11, color: t.textSecondary, background: t.surface, padding: "3px 8px", borderRadius: 6, border: `1px solid ${t.borderLight}` }}>{range}: <span style={{ fontWeight: 600, color: tr.rewardType === "percentage" ? t.accent : t.success }}>{reward}</span></span>;
+            })}
+          </div>}
+        </div>
+      ))}
+    </div>;
   }
 
   return (
@@ -145,13 +260,14 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
           {sec === "positions" && <Lst items={settings.positions} k="positions" cols="1fr 1fr 1fr 48px" render={(it: any) => <><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span><span style={{ fontSize: 13, color: t.textSecondary }}>{it.dept}</span><span style={{ fontSize: 12, color: t.purple, background: t.purpleLight, padding: "2px 8px", borderRadius: 6, justifySelf: "start" }}>{it.sub || "—"}</span></>} />}
           {sec === "ranks" && <Lst items={settings.ranks} k="ranks" cols="1fr 80px 60px 48px" render={(it: any) => <><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span><span style={{ fontSize: 13, color: t.textSecondary }}>Level {it.level}</span><div style={{ width: 20, height: 20, borderRadius: 6, background: it.color, border: `1px solid ${t.border}` }} /></>} />}
           {sec === "branches" && <Lst items={settings.branches} k="branches" cols="1fr 90px 130px 48px" render={(it: any) => { const lt = getLiveTime(it.tz); return <><div><div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>{it.isHQ && <span style={{ fontSize: 10, fontWeight: 700, color: t.accent, background: t.accentLight, padding: "2px 6px", borderRadius: 4 }}>HQ</span>}</div><span style={{ fontSize: 12, color: t.textTertiary }}>{it.address}</span></div><span style={{ fontSize: 13, color: t.textSecondary }}>{it.country}</span><div><span style={{ fontSize: 13, fontWeight: 600, color: t.accent, display: "flex", alignItems: "center", gap: 4 }}><Globe size={12} />{it.tz}</span>{lt && <span style={{ fontSize: 11, color: t.textTertiary, display: "flex", alignItems: "center", gap: 3, marginTop: 2 }}><Clock size={10} />{lt}</span>}</div></>; }} />}
-          {sec === "comp" && <Lst items={settings.comp} k="comp" cols="1fr 80px 150px 60px 48px" render={(it: any) => <><div><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span><div style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</div></div><span style={{ fontSize: 12, fontWeight: 600, color: typeColors[it.type], background: typeColors[it.type] + "15", padding: "3px 8px", borderRadius: 6, textTransform: "capitalize" as const, justifySelf: "start" }}>{it.type}</span><ScopeBadge scope={it.scope} value={it.sv} value2={it.sv2} /><span>{it.req ? <Check size={16} color={t.success} /> : <span style={{ fontSize: 12, color: t.textTertiary }}>Opt</span>}</span></>} />}
+          {sec === "comp" && <CompList />}
           {sec === "kpis" && <Lst items={settings.kpis} k="kpis" cols="1fr 90px 40px 150px 48px" render={(it: any) => <><div><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span><div style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</div></div><span style={{ fontSize: 12, color: t.textSecondary, background: t.bg, padding: "3px 8px", borderRadius: 6, justifySelf: "start" }}>{it.cat}</span><span style={{ fontSize: 13, color: t.textSecondary }}>{it.unit}</span><ScopeBadge scope={it.scope} value={it.sv} value2={it.sv2} /></>} />}
           {sec === "accounts" && <Lst items={settings.accounts} k="accounts" cols="1fr 140px 80px 48px" render={(it: any) => <><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>{it.auto && <span style={{ fontSize: 10, fontWeight: 600, color: t.purple, background: t.purpleLight, padding: "2px 6px", borderRadius: 4 }}>Auto</span>}</div><span style={{ fontSize: 13, color: t.textSecondary }}>{it.prov}</span><span>{it.req ? <Check size={16} color={t.success} /> : <span style={{ fontSize: 12, color: t.textTertiary }}>Opt</span>}</span></>} />}
           {sec === "contractTypes" && <Lst items={settings.contractTypes} k="contractTypes" cols="1fr 120px 100px 48px" render={(it: any) => <><div><div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 12, height: 12, borderRadius: 3, background: it.color }} /><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span></div><span style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</span></div><span style={{ fontSize: 12, color: t.textSecondary }}>{it.duration}</span><span style={{ fontSize: 12, fontWeight: 600, color: it.color, background: it.color + "15", padding: "2px 8px", borderRadius: 6 }}>{it.name}</span></>} />}
         </div>
       </div>
       {modal && <AMod />}
+      {editTiersId && <TierEditor compId={editTiersId} />}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   );

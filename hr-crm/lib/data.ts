@@ -5,11 +5,21 @@ export interface Position { id: string; name: string; dept: string; sub: string;
 export interface Rank { id: string; name: string; level: number; color: string; }
 export interface Branch { id: string; name: string; address: string; country: string; tz: string; isHQ: boolean; }
 
+export interface CommissionTier {
+  id: string;
+  minDeals: number;
+  maxDeals: number | null; // null = unlimited (e.g. "21+")
+  rewardType: "percentage" | "fixed"; // % of volume or fixed $
+  rewardValue: number;
+}
+
 export interface CompItem {
   id: string; name: string; type: "fixed" | "variable" | "equity" | "benefit";
   desc: string; req: boolean;
   scope: "position_rank" | "employee";
-  sv: string; sv2: string;  // sv=position, sv2=rank for position_rank; sv=employee name for employee
+  sv: string; sv2: string;
+  tiers: CommissionTier[]; // empty = no commission tiers
+  tierBasis: string; // what tiers measure: "deals", "revenue", "volume"
 }
 
 export interface KPI {
@@ -165,13 +175,22 @@ export const initialSettings: Settings = {
     {id:"b4",name:"Remote",address:"N/A",country:"Global",tz:"Various",isHQ:false},
   ],
   comp: [
-    {id:"c1",name:"Base Salary",type:"fixed",desc:"Monthly base compensation",req:true,scope:"position_rank",sv:"",sv2:""},
-    {id:"c2",name:"Housing Allowance",type:"fixed",desc:"Monthly housing support",req:false,scope:"position_rank",sv:"",sv2:""},
-    {id:"c3",name:"Annual Bonus",type:"variable",desc:"Performance-based yearly bonus",req:false,scope:"position_rank",sv:"",sv2:""},
-    {id:"c4",name:"Stock Options",type:"equity",desc:"Company equity grants",req:false,scope:"position_rank",sv:"",sv2:"Senior"},
-    {id:"c5",name:"Health Insurance",type:"benefit",desc:"Medical coverage",req:true,scope:"position_rank",sv:"",sv2:""},
-    {id:"c6",name:"Sales Commission",type:"variable",desc:"10% on closed deals",req:false,scope:"position_rank",sv:"Sales Manager",sv2:""},
-    {id:"c7",name:"Sr Eng Bonus",type:"variable",desc:"Quarterly bonus",req:false,scope:"position_rank",sv:"Software Engineer",sv2:"Senior"},
+    {id:"c1",name:"Base Salary",type:"fixed",desc:"Monthly base compensation",req:true,scope:"position_rank",sv:"",sv2:"",tiers:[],tierBasis:""},
+    {id:"c2",name:"Housing Allowance",type:"fixed",desc:"Monthly housing support",req:false,scope:"position_rank",sv:"",sv2:"",tiers:[],tierBasis:""},
+    {id:"c3",name:"Annual Bonus",type:"variable",desc:"Performance-based yearly bonus",req:false,scope:"position_rank",sv:"",sv2:"",tiers:[],tierBasis:""},
+    {id:"c4",name:"Stock Options",type:"equity",desc:"Company equity grants",req:false,scope:"position_rank",sv:"",sv2:"Senior",tiers:[],tierBasis:""},
+    {id:"c5",name:"Health Insurance",type:"benefit",desc:"Medical coverage",req:true,scope:"position_rank",sv:"",sv2:"",tiers:[],tierBasis:""},
+    {id:"c6",name:"Sales Commission",type:"variable",desc:"Tiered commission on closed deals",req:false,scope:"position_rank",sv:"Sales Manager",sv2:"",tierBasis:"deals",tiers:[
+      {id:"t1",minDeals:0,maxDeals:5,rewardType:"percentage",rewardValue:15},
+      {id:"t2",minDeals:6,maxDeals:10,rewardType:"percentage",rewardValue:20},
+      {id:"t3",minDeals:11,maxDeals:20,rewardType:"percentage",rewardValue:25},
+      {id:"t4",minDeals:21,maxDeals:null,rewardType:"percentage",rewardValue:30},
+    ]},
+    {id:"c7",name:"Referral Bonus",type:"variable",desc:"Fixed bonus per successful referral",req:false,scope:"position_rank",sv:"Recruiter",sv2:"",tierBasis:"deals",tiers:[
+      {id:"t5",minDeals:0,maxDeals:3,rewardType:"fixed",rewardValue:500},
+      {id:"t6",minDeals:4,maxDeals:8,rewardType:"fixed",rewardValue:750},
+      {id:"t7",minDeals:9,maxDeals:null,rewardType:"fixed",rewardValue:1000},
+    ]},
   ],
   kpis: [
     {id:"k1",name:"Revenue Target",cat:"Financial",unit:"$",desc:"Revenue goals",scope:"position_rank",sv:"",sv2:""},
