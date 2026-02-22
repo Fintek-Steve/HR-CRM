@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Briefcase, Calendar, DollarSign } from "lucide-react";
+import { Briefcase, Calendar, DollarSign, FileText } from "lucide-react";
 import { ThemeProvider, useTheme } from "@/lib/ThemeContext";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
@@ -8,6 +8,7 @@ import DashboardPage from "@/components/DashboardPage";
 import EmployeesPage from "@/components/employees/EmployeesPage";
 import EmployeeDetail from "@/components/employees/EmployeeDetail";
 import SettingsPage from "@/components/settings/SettingsPage";
+import DocumentsPage from "@/components/documents/DocumentsPage";
 import PlaceholderPage from "@/components/PlaceholderPage";
 import { initialSettings, initialEmployees, Settings, Employee } from "@/lib/data";
 
@@ -23,6 +24,7 @@ const pageConfig: Record<string, { title: string; subtitle: string }> = {
   recruitment: { title: "Recruitment", subtitle: "Manage job postings and pipeline" },
   leave: { title: "Leave Management", subtitle: "Track and approve leave requests" },
   payroll: { title: "Payroll & Compensation", subtitle: "Manage salaries and payroll" },
+  documents: { title: "Documents", subtitle: "Manage and assign company documents" },
   settings: { title: "Settings", subtitle: "Configure your organization" },
 };
 
@@ -48,6 +50,7 @@ function AppInner() {
             : page === "dashboard" ? <DashboardPage onNavigate={nav} />
             : page === "employees" ? <EmployeesPage onSelect={setSelEmp} settings={settings} employees={employees} />
             : page === "settings" ? <SettingsPage settings={settings} setSettings={setSettings} />
+            : page === "documents" ? <DocumentsPage settings={settings} setSettings={setSettings} />
             : page === "recruitment" ? <PlaceholderPage title="Recruitment & ATS" icon={Briefcase} />
             : page === "leave" ? <PlaceholderPage title="Leave Management" icon={Calendar} />
             : page === "payroll" ? <PlaceholderPage title="Payroll & Compensation" icon={DollarSign} />

@@ -1,5 +1,5 @@
 "use client";
-import { LayoutDashboard, Users, Briefcase, Calendar, DollarSign, Settings, LogOut, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, Users, Briefcase, Calendar, DollarSign, Settings, LogOut, Moon, Sun, FileText } from "lucide-react";
 import { useTheme } from "@/lib/ThemeContext";
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { id: "recruitment", icon: Briefcase, label: "Recruitment" },
   { id: "leave", icon: Calendar, label: "Leave" },
   { id: "payroll", icon: DollarSign, label: "Payroll" },
+  { id: "documents", icon: FileText, label: "Documents" },
   { id: "settings", icon: Settings, label: "Settings" },
 ];
 

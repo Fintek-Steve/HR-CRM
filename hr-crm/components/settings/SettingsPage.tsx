@@ -25,6 +25,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
     { id: "kpis", icon: Target, label: "KPI Structure", count: settings.kpis.length },
     { id: "accounts", icon: KeyRound, label: "Accounts", count: settings.accounts.length },
     { id: "contractTypes", icon: FileText, label: "Contract Types", count: settings.contractTypes.length },
+    { id: "docCategories", icon: FileText, label: "Doc Categories", count: (settings.docCategories || []).length },
   ];
 
   const del = (key: string, id: string) => { setSettings((p: any) => ({ ...p, [key]: p[key].filter((i: any) => i.id !== id) })); setToast("Removed"); };
@@ -260,7 +261,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
       else { setSettings(p => ({ ...p, [sec]: [...(p as any)[sec], { id: generateId(sec[0]), ...f }] })); }
       setModal(false); setToast("Added successfully");
     };
-    const titles: Record<string, string> = { departments: "Add Department", positions: "Add Position", ranks: "Add Rank", branches: "Add Branch", comp: "Add Compensation", kpis: "Add KPI", accounts: "Add Account", contractTypes: "Add Contract Type" };
+    const titles: Record<string, string> = { departments: "Add Department", positions: "Add Position", ranks: "Add Rank", branches: "Add Branch", comp: "Add Compensation", kpis: "Add KPI", accounts: "Add Account", contractTypes: "Add Contract Type", docCategories: "Add Doc Category" };
     const posN = settings.positions.map(p => p.name);
     const rkN = settings.ranks.map(r => r.name);
     const empN = ["Sarah Chen", "Marcus Williams", "Priya Patel", "James O'Brien", "Aisha Mohammed", "Tom Fischer", "Elena Rodriguez", "Kai Nakamura", "Diana Costa", "Alex Thompson"];
@@ -284,6 +285,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
         </>}
         {sec === "accounts" && <><FormField label="Provider" required><Input value={f.prov || ""} onChange={v => u("prov", v)} placeholder="e.g. Google, Slack" /></FormField><div style={{ display: "flex", gap: 24, padding: "8px 0" }}><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Required</span><Toggle checked={f.req || false} onChange={v => u("req", v)} /></div><div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>Auto-Provision</span><Toggle checked={f.auto || false} onChange={v => u("auto", v)} /></div></div></>}
         {sec === "contractTypes" && <><FormField label="Description"><Input value={f.desc || ""} onChange={v => u("desc", v)} placeholder="Description" /></FormField><FormField label="Duration"><Input value={f.duration || ""} onChange={v => u("duration", v)} placeholder="e.g. Indefinite, Fixed, 3-6 months" /></FormField><FormField label="Color"><Input value={f.color || "#2D5BFF"} onChange={v => u("color", v)} placeholder="#hex" /></FormField></>}
+        {sec === "docCategories" && <FormField label="Color"><Input value={f.color || "#2D5BFF"} onChange={v => u("color", v)} placeholder="#hex color" /></FormField>}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${t.border}` }}><Btn variant="secondary" onClick={() => setModal(false)}>Cancel</Btn><Btn onClick={save} icon={Plus}>Add</Btn></div>
       </Modal>
     );
@@ -313,6 +315,7 @@ export default function SettingsPage({ settings, setSettings }: { settings: Sett
           {sec === "kpis" && <TieredList items={settings.kpis} kind="kpis" extraCols={(it: any) => <><span style={{ fontSize: 12, color: t.textSecondary, background: t.bg, padding: "3px 8px", borderRadius: 6, flexShrink: 0 }}>{it.cat}</span><span style={{ fontSize: 13, color: t.textSecondary, flexShrink: 0 }}>{it.unit}</span></>} />}
           {sec === "accounts" && <Lst items={settings.accounts} k="accounts" cols="1fr 140px 80px 48px" render={(it: any) => <><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span>{it.auto && <span style={{ fontSize: 10, fontWeight: 600, color: t.purple, background: t.purpleLight, padding: "2px 6px", borderRadius: 4 }}>Auto</span>}</div><span style={{ fontSize: 13, color: t.textSecondary }}>{it.prov}</span><span>{it.req ? <Check size={16} color={t.success} /> : <span style={{ fontSize: 12, color: t.textTertiary }}>Opt</span>}</span></>} />}
           {sec === "contractTypes" && <Lst items={settings.contractTypes} k="contractTypes" cols="1fr 120px 100px 48px" render={(it: any) => <><div><div style={{ display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 12, height: 12, borderRadius: 3, background: it.color }} /><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span></div><span style={{ fontSize: 12, color: t.textTertiary }}>{it.desc}</span></div><span style={{ fontSize: 12, color: t.textSecondary }}>{it.duration}</span><span style={{ fontSize: 12, fontWeight: 600, color: it.color, background: it.color + "15", padding: "2px 8px", borderRadius: 6 }}>{it.name}</span></>} />}
+          {sec === "docCategories" && <Lst items={settings.docCategories || []} k="docCategories" cols="1fr 100px 48px" render={(it: any) => <><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 14, height: 14, borderRadius: 4, background: it.color }} /><span style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{it.name}</span></div><span style={{ fontSize: 12, fontWeight: 600, color: it.color, background: it.color + "15", padding: "2px 8px", borderRadius: 6 }}>{it.name}</span></>} />}
         </div>
       </div>
       {modal && <AMod />}

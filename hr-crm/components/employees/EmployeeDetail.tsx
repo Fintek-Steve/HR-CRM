@@ -254,7 +254,35 @@ export default function EmployeeDetail({ emp: initEmp, onBack, settings }: { emp
     </div>}
 
     {/* Placeholders */}
-    {(tab === "documents" || tab === "notes") && <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.border}`, padding: 48, textAlign: "center" as const }}><div style={{ fontSize: 40, marginBottom: 16 }}>🚧</div><div style={{ fontSize: 16, fontWeight: 600, color: t.text, marginBottom: 4 }}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</div><div style={{ fontSize: 14, color: t.textSecondary }}>Coming in the next phase.</div></div>}
+    {tab === "documents" && <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.border}`, padding: 24 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}><h3 style={{ fontSize: 15, fontWeight: 650, color: t.text, margin: 0 }}>Documents</h3></div>
+      {(() => {
+        const empDocs = (settings.documents || []).filter(d => {
+          if (d.assignTo === "everyone") return true;
+          if (d.assignTo === "single" && d.assignValues.includes(emp.nm)) return true;
+          if (d.assignTo === "employees" && d.assignValues.includes(emp.nm)) return true;
+          if (d.assignTo === "departments" && d.assignValues.includes(emp.dept)) return true;
+          if (d.assignTo === "sub_departments" && d.assignValues.includes(emp.sub)) return true;
+          return false;
+        });
+        const catColor = (name: string) => (settings.docCategories || []).find(c => c.name === name)?.color || "#6B6966";
+        const fileIcons: Record<string, { color: string; label: string }> = { pdf: { color: "#E53E3E", label: "PDF" }, doc: { color: "#2D5BFF", label: "DOC" }, img: { color: "#D97706", label: "IMG" }, other: { color: "#6B6966", label: "FILE" } };
+        if (empDocs.length === 0) return <div style={{ padding: 24, textAlign: "center" as const, color: t.textTertiary }}>No documents assigned</div>;
+        return empDocs.map((d, i) => {
+          const fi = fileIcons[d.fileType] || fileIcons.other;
+          return <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < empDocs.length - 1 ? `1px solid ${t.borderLight}` : "none" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: fi.color + "15", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10, fontWeight: 700, color: fi.color }}>{fi.label}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 550, color: t.text }}>{d.name}</div>
+              <div style={{ fontSize: 11, color: t.textTertiary }}>{d.uploadDate} · {d.fileSize}</div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: catColor(d.category), background: catColor(d.category) + "15", padding: "2px 8px", borderRadius: 6 }}>{d.category}</span>
+          </div>;
+        });
+      })()}
+    </div>}
+
+    {tab === "notes" && <div style={{ background: t.surface, borderRadius: 16, border: `1px solid ${t.border}`, padding: 48, textAlign: "center" as const }}><div style={{ fontSize: 40, marginBottom: 16 }}>🚧</div><div style={{ fontSize: 16, fontWeight: 600, color: t.text, marginBottom: 4 }}>Notes</div><div style={{ fontSize: 14, color: t.textSecondary }}>Coming in the next phase.</div></div>}
 
     {showAddHistory && <AddHistoryModal />}
     {toast && <Toast message={toast} onClose={() => setToast(null)} />}

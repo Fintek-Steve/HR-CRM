@@ -34,12 +34,29 @@ export interface KPI {
 export interface Account { id: string; name: string; prov: string; req: boolean; auto: boolean; }
 export interface ContractType { id: string; name: string; desc: string; duration: string; color: string; }
 export interface CommissionBasis { id: string; name: string; unit: string; }
+export interface DocCategory { id: string; name: string; color: string; }
+
+export interface Document {
+  id: string;
+  name: string;
+  category: string;       // DocCategory name
+  assignTo: "everyone" | "departments" | "sub_departments" | "employees" | "single";
+  assignValues: string[];  // dept names, sub-dept names, or employee names
+  uploadedBy: string;
+  uploadDate: string;
+  fileType: "pdf" | "doc" | "img" | "other";
+  fileSize: string;
+  status: "active" | "draft" | "archived";
+  content: string;         // mock content for preview
+}
 
 export interface Settings {
   departments: Department[]; positions: Position[]; ranks: Rank[];
   branches: Branch[]; comp: CompItem[]; kpis: KPI[];
   accounts: Account[]; contractTypes: ContractType[];
   commissionBases: CommissionBasis[];
+  docCategories: DocCategory[];
+  documents: Document[];
 }
 
 export interface HistoryEntry {
@@ -241,6 +258,30 @@ export const initialSettings: Settings = {
     {id:"cb5",name:"Referrals",unit:"referrals"},
     {id:"cb6",name:"Contracts signed",unit:"contracts"},
     {id:"cb7",name:"Accounts opened",unit:"accounts"},
+  ],
+  docCategories: [
+    {id:"dc1",name:"ID / Passport",color:"#2D5BFF"},
+    {id:"dc2",name:"Employment Contract",color:"#0D9F6E"},
+    {id:"dc3",name:"Company Protocol",color:"#7C3AED"},
+    {id:"dc4",name:"Certificate / Training",color:"#D97706"},
+    {id:"dc5",name:"Other",color:"#6B6966"},
+  ],
+  documents: [
+    {id:"doc1",name:"Employee Handbook 2026",category:"Company Protocol",assignTo:"everyone",assignValues:[],uploadedBy:"Rachel Green",uploadDate:"2026-01-05",fileType:"pdf",fileSize:"2.4 MB",status:"active",content:"This Employee Handbook outlines all company policies, procedures, and expectations for employees of the organization. It covers topics including work hours, dress code, communication policies, leave procedures, and more."},
+    {id:"doc2",name:"NDA Agreement Template",category:"Employment Contract",assignTo:"everyone",assignValues:[],uploadedBy:"Rachel Green",uploadDate:"2026-01-10",fileType:"pdf",fileSize:"420 KB",status:"active",content:"Non-Disclosure Agreement: This agreement is entered into by and between the Company and the Employee. The Employee agrees to hold in strict confidence all proprietary and confidential information disclosed during the course of employment."},
+    {id:"doc3",name:"IT Security Policy",category:"Company Protocol",assignTo:"departments",assignValues:["Engineering"],uploadedBy:"Tom Fischer",uploadDate:"2026-01-15",fileType:"pdf",fileSize:"1.1 MB",status:"active",content:"IT Security Policy document covering data protection, password requirements, VPN usage, acceptable use of company devices, incident reporting procedures, and security best practices for all engineering team members."},
+    {id:"doc4",name:"Sales Onboarding Guide",category:"Certificate / Training",assignTo:"departments",assignValues:["Sales & Marketing"],uploadedBy:"Diana Costa",uploadDate:"2026-01-20",fileType:"doc",fileSize:"890 KB",status:"active",content:"Comprehensive onboarding guide for new sales team members. Includes CRM training, product knowledge requirements, sales methodology overview, commission structure explanation, and first 90-day goals."},
+    {id:"doc5",name:"Sarah Chen - Passport",category:"ID / Passport",assignTo:"single",assignValues:["Sarah Chen"],uploadedBy:"Rachel Green",uploadDate:"2025-11-15",fileType:"img",fileSize:"1.8 MB",status:"active",content:"[Passport document for Sarah Chen - ID verification on file]"},
+    {id:"doc6",name:"Sarah Chen - Employment Contract",category:"Employment Contract",assignTo:"single",assignValues:["Sarah Chen"],uploadedBy:"Rachel Green",uploadDate:"2025-09-01",fileType:"pdf",fileSize:"560 KB",status:"active",content:"Employment Contract between the Company and Sarah Chen. Position: Software Engineer. Start date: September 1, 2025. Terms include compensation, benefits, intellectual property rights, and termination clauses."},
+    {id:"doc7",name:"Marcus Williams - ID",category:"ID / Passport",assignTo:"single",assignValues:["Marcus Williams"],uploadedBy:"Rachel Green",uploadDate:"2025-10-20",fileType:"img",fileSize:"2.1 MB",status:"active",content:"[ID document for Marcus Williams - verification on file]"},
+    {id:"doc8",name:"Marcus Williams - Contract",category:"Employment Contract",assignTo:"single",assignValues:["Marcus Williams"],uploadedBy:"Tom Fischer",uploadDate:"2025-10-01",fileType:"pdf",fileSize:"580 KB",status:"active",content:"Employment Contract for Marcus Williams. Position: Sales Manager. Department: Sales & Marketing. Includes base salary, commission structure, and performance review schedule."},
+    {id:"doc9",name:"Remote Work Policy",category:"Company Protocol",assignTo:"everyone",assignValues:[],uploadedBy:"Rachel Green",uploadDate:"2026-02-01",fileType:"pdf",fileSize:"340 KB",status:"active",content:"Remote Work Policy outlining eligibility, equipment provisions, communication expectations, availability requirements, and home office setup guidelines for all employees approved for remote work."},
+    {id:"doc10",name:"Priya Patel - AWS Certificate",category:"Certificate / Training",assignTo:"single",assignValues:["Priya Patel"],uploadedBy:"Diana Costa",uploadDate:"2026-01-25",fileType:"img",fileSize:"950 KB",status:"active",content:"[AWS Solutions Architect Professional Certificate - Priya Patel, issued January 2026]"},
+    {id:"doc11",name:"Fire Safety Protocol",category:"Company Protocol",assignTo:"everyone",assignValues:[],uploadedBy:"Tom Fischer",uploadDate:"2025-12-10",fileType:"pdf",fileSize:"1.5 MB",status:"active",content:"Fire Safety Protocol including evacuation routes, assembly points, fire extinguisher locations, emergency contacts, and quarterly drill schedule for all office locations."},
+    {id:"doc12",name:"Engineering Code Standards",category:"Company Protocol",assignTo:"sub_departments",assignValues:["Frontend","Backend","DevOps"],uploadedBy:"Rachel Green",uploadDate:"2026-02-10",fileType:"doc",fileSize:"720 KB",status:"active",content:"Code standards and best practices for the Engineering department. Covers code review process, branch naming conventions, testing requirements, documentation standards, and deployment procedures."},
+    {id:"doc13",name:"James O'Brien - Work Permit",category:"ID / Passport",assignTo:"single",assignValues:["James O'Brien"],uploadedBy:"Diana Costa",uploadDate:"2025-08-15",fileType:"pdf",fileSize:"1.3 MB",status:"active",content:"[Work Permit document for James O'Brien - valid through August 2026. Renewal required.]"},
+    {id:"doc14",name:"Aisha Mohammed - Contract",category:"Employment Contract",assignTo:"single",assignValues:["Aisha Mohammed"],uploadedBy:"Rachel Green",uploadDate:"2025-07-01",fileType:"pdf",fileSize:"610 KB",status:"active",content:"Employment Contract for Aisha Mohammed. Position: Data Analyst. Department: Operations. Full-time permanent contract with standard benefits package."},
+    {id:"doc15",name:"Q1 Training Schedule",category:"Certificate / Training",assignTo:"departments",assignValues:["Engineering","Operations"],uploadedBy:"Diana Costa",uploadDate:"2026-02-15",fileType:"doc",fileSize:"280 KB",status:"draft",content:"Q1 2026 Training Schedule for Engineering and Operations departments. Includes cloud certification prep, leadership workshops, and technical skill development sessions."},
   ],
 };
 
